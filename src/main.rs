@@ -16,6 +16,9 @@ fn main() {
     }
 
     handle(protocol);
+    loop {
+        handle(read_line());
+    }
 }
 
 fn handle_unknown(command: String) {
@@ -24,7 +27,6 @@ fn handle_unknown(command: String) {
 }
 
 fn read_line() -> String {
-
     let mut input: String = String::new();
     match io::stdin().read_line(&mut input) {
         Ok(_) => return input.trim().to_string(),

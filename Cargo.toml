@@ -1,7 +1,7 @@
 [package]
 name = "rust-chess"
 version = "0.0.1"
-authors = ["benmannon <benmannon@gmail.com>"]
+authors = ["me-unsolicited"]
 edition = "2018"
 
 [dependencies]

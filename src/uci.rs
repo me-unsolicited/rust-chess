@@ -37,11 +37,11 @@ fn isready() {
     unimplemented!();
 }
 
-fn setoption(args: Vec<&str>) {
+fn setoption(_args: Vec<&str>) {
     unimplemented!();
 }
 
-fn register(args: Vec<&str>) {
+fn register(_args: Vec<&str>) {
     unimplemented!();
 }
 
@@ -49,11 +49,11 @@ fn ucinewgame() {
     unimplemented!();
 }
 
-fn position(args: Vec<&str>) {
+fn position(_args: Vec<&str>) {
     unimplemented!();
 }
 
-fn go(args: Vec<&str>) {
+fn go(_args: Vec<&str>) {
     unimplemented!();
 }
 

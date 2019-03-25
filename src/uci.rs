@@ -3,7 +3,7 @@ use std::process;
 pub fn send_command(command_args: String) {
 
     let mut tokens = command_args.split_whitespace();
-    let command = tokens.next().unwrap();
+    let command = tokens.next().unwrap_or("");
     let args = tokens.collect::<Vec<&str>>();
 
     match command {

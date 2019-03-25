@@ -8,7 +8,7 @@ pub fn send_command(command_args: String) {
 
     match command {
         "uci" => uci(),
-        "debug" => debug(),
+        "debug" => debug(args),
         "isready" => isready(),
         "setoption" => setoption(args),
         "register" => register(args),
@@ -29,7 +29,7 @@ fn uci() {
     println!("uciok");
 }
 
-fn debug() {
+fn debug(_args: Vec<&str>) {
     unimplemented!();
 }
 

@@ -10,13 +10,14 @@ mod protocol;
 fn main() {
     println!("{} {}", env!("CARGO_PKG_NAME").red().bold(), env!("CARGO_PKG_VERSION"));
 
+    // first command gives the protocol name
     let protocol_command: String = read_line();
-
     let protocol: Box<Protocol> = match protocol_command.as_ref() {
         "uci" => Box::from(uci::Uci::new()),
         _ => Box::from(unknown_protocol()),
     };
 
+    // follow the protocol from here on
     protocol.send_command(protocol_command);
     loop {
         protocol.send_command(read_line());

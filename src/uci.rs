@@ -1,70 +1,85 @@
 use std::process;
 
-pub fn send_command(command_args: String) {
+use crate::protocol::Protocol;
 
-    let mut tokens = command_args.split_whitespace();
-    let command = tokens.next().unwrap_or("");
-    let args = tokens.collect::<Vec<&str>>();
+pub struct Uci {
+    // TODO uci state
+}
 
-    match command {
-        "uci" => uci(),
-        "debug" => debug(args),
-        "isready" => isready(),
-        "setoption" => setoption(args),
-        "register" => register(args),
-        "ucinewgame" => ucinewgame(),
-        "position" => position(args),
-        "go" => go(args),
-        "stop" => stop(),
-        "ponderhit" => ponderhit(),
-        "quit" => quit(),
-        _ => (),
+
+impl Uci {
+    pub fn new() -> Uci {
+        Uci {}
+    }
+
+    fn uci(&self) {
+        println!("id name {}", env!("CARGO_PKG_NAME"));
+        println!("id author {}", env!("CARGO_PKG_AUTHORS"));
+        println!("option");
+        println!("uciok");
+    }
+
+    fn debug(&self, _args: Vec<&str>) {
+        unimplemented!();
+    }
+
+    fn isready(&self) {
+        unimplemented!();
+    }
+
+    fn setoption(&self, _args: Vec<&str>) {
+        unimplemented!();
+    }
+
+    fn register(&self, _args: Vec<&str>) {
+        unimplemented!();
+    }
+
+    fn ucinewgame(&self) {
+        unimplemented!();
+    }
+
+    fn position(&self, _args: Vec<&str>) {
+        unimplemented!();
+    }
+
+    fn go(&self, _args: Vec<&str>) {
+        unimplemented!();
+    }
+
+    fn stop(&self) {
+        unimplemented!();
+    }
+
+    fn ponderhit(&self) {
+        unimplemented!();
+    }
+
+    fn quit(&self) {
+        process::exit(1);
     }
 }
 
-fn uci() {
-    println!("id name {}", env!("CARGO_PKG_NAME"));
-    println!("id author {}", env!("CARGO_PKG_AUTHORS"));
-    println!("option");
-    println!("uciok");
-}
 
-fn debug(_args: Vec<&str>) {
-    unimplemented!();
-}
+impl Protocol for Uci {
+    fn send_command(&self, command_args: String) {
+        let mut tokens = command_args.split_whitespace();
+        let command = tokens.next().unwrap_or("");
+        let args = tokens.collect::<Vec<&str>>();
 
-fn isready() {
-    unimplemented!();
-}
-
-fn setoption(_args: Vec<&str>) {
-    unimplemented!();
-}
-
-fn register(_args: Vec<&str>) {
-    unimplemented!();
-}
-
-fn ucinewgame() {
-    unimplemented!();
-}
-
-fn position(_args: Vec<&str>) {
-    unimplemented!();
-}
-
-fn go(_args: Vec<&str>) {
-    unimplemented!();
-}
-
-fn stop() {
-    unimplemented!();
-}
-
-fn ponderhit() {
-    unimplemented!();
-}
-
-fn quit() {
-    process::exit(1);
+        match command {
+            "uci" => self.uci(),
+            "debug" => self.debug(args),
+            "isready" => self.isready(),
+            "setoption" => self.setoption(args),
+            "register" => self.register(args),
+            "ucinewgame" => self.ucinewgame(),
+            "position" => self.position(args),
+            "go" => self.go(args),
+            "stop" => self.stop(),
+            "ponderhit" => self.ponderhit(),
+            "quit" => self.quit(),
+            _ => (),
+        }
+    }
 }

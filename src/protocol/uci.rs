@@ -49,7 +49,14 @@ impl Uci {
     }
 
     fn ucinewgame(&self) {
-        unimplemented!();
+
+        // reset engine
+        let engine = self.engine.take()
+            .expect("engine not initialized");
+
+        engine.reset();
+
+        self.engine.set(Option::Some(engine));
     }
 
     fn position(&self, _args: Vec<&str>) {

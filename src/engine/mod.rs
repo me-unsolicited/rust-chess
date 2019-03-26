@@ -15,4 +15,8 @@ impl Engine {
             position: Cell::new(Board::start_pos()),
         }
     }
+
+    pub fn reset(&self) {
+        self.position.set(Board::start_pos());
+    }
 }

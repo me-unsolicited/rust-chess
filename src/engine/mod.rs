@@ -1,22 +1,20 @@
-use std::cell::Cell;
-
 use crate::engine::board::Board;
 
 mod board;
 
 pub struct Engine {
-    position: Cell<Board>
+    position: Board
 }
 
 
 impl Engine {
     pub fn new() -> Engine {
         Engine {
-            position: Cell::new(Board::start_pos()),
+            position: Board::start_pos(),
         }
     }
 
-    pub fn reset(&self) {
-        self.position.set(Board::start_pos());
+    pub fn reset(&mut self) {
+        self.position = Board::start_pos();
     }
 }

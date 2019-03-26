@@ -13,7 +13,7 @@ fn main() {
 
     // first command gives the protocol name
     let protocol_command: String = read_line();
-    let protocol: Box<Protocol> = match protocol_command.as_ref() {
+    let mut protocol: Box<Protocol> = match protocol_command.as_ref() {
         "uci" => Box::from(uci::Uci::new()),
         _ => Box::from(unknown_protocol()),
     };
@@ -29,7 +29,7 @@ fn unknown_protocol() -> impl Protocol {
     struct Unknown {}
 
     impl Protocol for Unknown {
-        fn send_command(&self, command_args: String) {
+        fn send_command(&mut self, command_args: String) {
             println!("unknown protocol: {}", command_args);
             process::exit(1);
         }

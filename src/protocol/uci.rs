@@ -1,36 +1,35 @@
-use std::cell::Cell;
 use std::process;
 
 use crate::protocol::Protocol;
 use crate::engine::*;
 
 pub struct Uci {
-    engine: Cell<Option<Engine>>,
-    debug: Cell<bool>,
+    engine: Option<Engine>,
+    debug: bool,
 }
 
 
 impl Uci {
     pub fn new() -> Uci {
         Uci {
-            engine: Cell::new(Option::None),
-            debug: Cell::new(false),
+            engine: Option::None,
+            debug: false,
         }
     }
 
-    fn uci(&self) {
+    fn uci(&mut self) {
         println!("id name {}", env!("CARGO_PKG_NAME"));
         println!("id author {}", env!("CARGO_PKG_AUTHORS"));
         println!("option");
 
-        self.engine.set(Option::Some(Engine::new()));
+        self.engine = Option::Some(Engine::new());
         println!("uciok");
     }
 
-    fn debug(&self, args: Vec<&str>) {
+    fn debug(&mut self, args: Vec<&str>) {
         let arg: &str = *args.first().unwrap_or(&"off");
-        self.debug.set("on" == arg);
-        print_debug(format!("debug is {}", self.debug.get()))
+        self.debug = "on" == arg;
+        print_debug(format!("debug is {}", self.debug))
     }
 
     fn isready(&self) {
@@ -48,15 +47,12 @@ impl Uci {
         // protocol, but okay we're not using it so nbd
     }
 
-    fn ucinewgame(&self) {
+    fn ucinewgame(&mut self) {
 
         // reset engine
-        let engine = self.engine.take()
-            .expect("engine not initialized");
-
-        engine.reset();
-
-        self.engine.set(Option::Some(engine));
+        self.engine.as_mut()
+            .expect("engine not initialized")
+            .reset();
     }
 
     fn position(&self, _args: Vec<&str>) {
@@ -82,7 +78,7 @@ impl Uci {
 
 
 impl Protocol for Uci {
-    fn send_command(&self, command_args: String) {
+    fn send_command(&mut self, command_args: String) {
         let mut tokens = command_args.split_whitespace();
         let command = tokens.next().unwrap_or("");
         let args = tokens.collect::<Vec<&str>>();

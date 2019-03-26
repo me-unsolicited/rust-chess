@@ -1,7 +1,7 @@
 use std::process;
 
-use crate::protocol::Protocol;
 use crate::engine::*;
+use crate::protocol::Protocol;
 
 pub struct Uci {
     engine: Engine,
@@ -49,8 +49,13 @@ impl Uci {
         self.engine.reset();
     }
 
-    fn position(&self, _args: Vec<&str>) {
-        unimplemented!();
+    fn position(&mut self, args: Vec<&str>) {
+        let arg: &str = *args.first().expect("expected fen");
+        if arg == "startpos" {
+            self.engine.set_start_pos();
+        } else {
+            self.engine.set_position(arg);
+        }
     }
 
     fn go(&self, _args: Vec<&str>) {

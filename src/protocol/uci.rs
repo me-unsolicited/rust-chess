@@ -38,7 +38,9 @@ impl Uci {
     }
 
     fn register(&self, _args: Vec<&str>) {
-        unimplemented!();
+
+        // this engine does not need to be registered. this is a weird thing to put in a standard
+        // protocol, but okay we're not using it so nbd
     }
 
     fn ucinewgame(&self) {

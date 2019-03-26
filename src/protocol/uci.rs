@@ -2,8 +2,10 @@ use std::cell::Cell;
 use std::process;
 
 use crate::protocol::Protocol;
+use crate::engine::*;
 
 pub struct Uci {
+    engine: Cell<Option<Engine>>,
     debug: Cell<bool>,
 }
 
@@ -11,6 +13,7 @@ pub struct Uci {
 impl Uci {
     pub fn new() -> Uci {
         Uci {
+            engine: Cell::new(Option::None),
             debug: Cell::new(false),
         }
     }
@@ -19,6 +22,8 @@ impl Uci {
         println!("id name {}", env!("CARGO_PKG_NAME"));
         println!("id author {}", env!("CARGO_PKG_AUTHORS"));
         println!("option");
+
+        self.engine.set(Option::Some(Engine::new()));
         println!("uciok");
     }
 

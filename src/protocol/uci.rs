@@ -33,7 +33,8 @@ impl Uci {
     }
 
     fn setoption(&self, _args: Vec<&str>) {
-        unimplemented!();
+
+        // no options are supported; just return
     }
 
     fn register(&self, _args: Vec<&str>) {

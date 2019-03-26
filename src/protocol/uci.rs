@@ -29,7 +29,7 @@ impl Uci {
     }
 
     fn isready(&self) {
-        unimplemented!();
+        println!("readyok");
     }
 
     fn setoption(&self, _args: Vec<&str>) {

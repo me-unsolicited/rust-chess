@@ -4,7 +4,7 @@ use crate::protocol::Protocol;
 use crate::engine::*;
 
 pub struct Uci {
-    engine: Option<Engine>,
+    engine: Engine,
     debug: bool,
 }
 
@@ -12,7 +12,7 @@ pub struct Uci {
 impl Uci {
     pub fn new() -> Uci {
         Uci {
-            engine: Option::None,
+            engine: Engine::new(),
             debug: false,
         }
     }
@@ -21,8 +21,6 @@ impl Uci {
         println!("id name {}", env!("CARGO_PKG_NAME"));
         println!("id author {}", env!("CARGO_PKG_AUTHORS"));
         println!("option");
-
-        self.engine = Option::Some(Engine::new());
         println!("uciok");
     }
 
@@ -48,11 +46,7 @@ impl Uci {
     }
 
     fn ucinewgame(&mut self) {
-
-        // reset engine
-        self.engine.as_mut()
-            .expect("engine not initialized")
-            .reset();
+        self.engine.reset();
     }
 
     fn position(&self, _args: Vec<&str>) {

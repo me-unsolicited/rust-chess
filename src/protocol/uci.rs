@@ -1,14 +1,18 @@
+use std::cell::Cell;
 use std::process;
+
 use crate::protocol::Protocol;
 
 pub struct Uci {
-    // TODO uci state
+    debug: Cell<bool>,
 }
 
 
 impl Uci {
     pub fn new() -> Uci {
-        Uci {}
+        Uci {
+            debug: Cell::new(false),
+        }
     }
 
     fn uci(&self) {
@@ -18,8 +22,10 @@ impl Uci {
         println!("uciok");
     }
 
-    fn debug(&self, _args: Vec<&str>) {
-        unimplemented!();
+    fn debug(&self, args: Vec<&str>) {
+        let arg: &str = *args.first().unwrap_or(&"off");
+        self.debug.set("on" == arg);
+        print_debug(format!("debug is {}", self.debug.get()))
     }
 
     fn isready(&self) {
@@ -81,4 +87,9 @@ impl Protocol for Uci {
             _ => (),
         }
     }
+}
+
+
+fn print_debug(msg: String) {
+    println!("info string {}", msg)
 }

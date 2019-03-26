@@ -1,12 +1,10 @@
 use std::{io, process};
 
 use colored::*;
+use crate::protocol::*;
 
-use crate::protocol::Protocol;
-use crate::uci::Uci;
 
 mod protocol;
-mod uci;
 
 
 fn main() {
@@ -15,7 +13,7 @@ fn main() {
     let protocol_command: String = read_line();
 
     let protocol: Box<Protocol> = match protocol_command.as_ref() {
-        "uci" => Box::from(Uci::new()),
+        "uci" => Box::from(uci::Uci::new()),
         _ => Box::from(unknown_protocol()),
     };
 

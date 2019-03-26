@@ -1,5 +1,4 @@
 use std::process;
-
 use crate::protocol::Protocol;
 
 pub struct Uci {

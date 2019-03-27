@@ -5,6 +5,7 @@ use crate::engine::*;
 use crate::engine::mov::Move;
 use crate::protocol::Protocol;
 use std::iter::Peekable;
+use std::collections::HashMap;
 
 pub struct Uci {
     engine: Engine,
@@ -21,20 +22,20 @@ impl Uci {
     }
 
     fn uci(&mut self) {
-        println!("id name {}", env!("CARGO_PKG_NAME"));
-        println!("id author {}", env!("CARGO_PKG_AUTHORS"));
-        println!("option");
-        println!("uciok");
+        uci_out::id_name(env!("CARGO_PKG_NAME"));
+        uci_out::id_author(env!("CARGO_PKG_AUTHORS"));
+        uci_out::option(HashMap::new());
+        uci_out::uciok();
     }
 
     fn debug(&mut self, args: Vec<&str>) {
         let arg: &str = *args.first().unwrap_or(&"off");
         self.debug = "on" == arg;
-        print_debug(format!("debug is {}", self.debug))
+        uci_out::info_string(&format!("debug is {}", self.debug));
     }
 
     fn isready(&self) {
-        println!("readyok");
+        uci_out::readyok();
     }
 
     fn setoption(&self, _args: Vec<&str>) {
@@ -138,11 +139,6 @@ impl Protocol for Uci {
 }
 
 
-fn print_debug(msg: String) {
-    println!("info string {}", msg)
-}
-
-
 fn parse_moves(args: &mut Peekable<Iter<&str>>) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
 
@@ -154,4 +150,34 @@ fn parse_moves(args: &mut Peekable<Iter<&str>>) -> Vec<Move> {
     }
 
     return moves;
+}
+
+
+mod uci_out {
+    use std::collections::HashMap;
+
+    pub fn id_name(name: &str) {
+        println!("id name {}", name);
+    }
+
+    pub fn id_author(author: &str) {
+        println!("id author {}", author)
+    }
+
+    pub fn option(_options: HashMap<&str, &str>) {
+        // TODO implement option
+        println!("option");
+    }
+
+    pub fn uciok() {
+        println!("uciok");
+    }
+
+    pub fn info_string(msg: &str) {
+        println!("info string {}", msg)
+    }
+
+    pub fn readyok() {
+        println!("readyok");
+    }
 }

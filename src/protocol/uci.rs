@@ -196,20 +196,20 @@ mod uci_out {
         println!("id author {}", author)
     }
 
-    pub fn option(_options: HashMap<&str, &str>) {
-        // TODO implement option
-        println!("option");
-    }
-
     pub fn uciok() {
         println!("uciok");
+    }
+
+    pub fn readyok() {
+        println!("readyok");
     }
 
     pub fn info_string(msg: &str) {
         println!("info string {}", msg)
     }
 
-    pub fn readyok() {
-        println!("readyok");
+    pub fn option(_options: HashMap<&str, &str>) {
+        // TODO implement option
+        println!("option");
     }
 }

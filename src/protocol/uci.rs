@@ -1,23 +1,21 @@
+use std::collections::HashMap;
+use std::iter::Peekable;
 use std::process;
 use std::slice::Iter;
 
 use crate::engine::*;
 use crate::engine::mov::Move;
 use crate::protocol::Protocol;
-use std::iter::Peekable;
-use std::collections::HashMap;
 
 pub struct Uci {
     engine: Engine,
-    debug: bool,
 }
 
 
 impl Uci {
     pub fn new() -> Uci {
         Uci {
-            engine: Engine::new(),
-            debug: false,
+            engine: Engine::new(log::info),
         }
     }
 
@@ -30,8 +28,10 @@ impl Uci {
 
     fn debug(&mut self, args: Vec<&str>) {
         let arg: &str = *args.first().unwrap_or(&"off");
-        self.debug = "on" == arg;
-        uci_out::info_string(&format!("debug is {}", self.debug));
+        let debug = "on" == arg;
+        log::log(&format!("debug is {}", debug));
+        let log_fn = if debug { log::debug } else { log::info };
+        self.engine.set_log_fn(log_fn);
     }
 
     fn isready(&self) {
@@ -62,7 +62,7 @@ impl Uci {
         }
     }
 
-    fn go(&self, args: Vec<&str>) {
+    fn go(&mut self, args: Vec<&str>) {
         let mut search_moves: Vec<Move> = Vec::new();
         let mut ponder = false;
         let mut wtime = 0;
@@ -92,7 +92,7 @@ impl Uci {
                 "mate" => mate = iter.next().unwrap_or(&"0").parse().unwrap(),
                 "movetime" => movetime = iter.next().unwrap_or(&"0").parse().unwrap(),
                 "infinite" => infinite = true,
-                _ => {},
+                _ => {}
             }
             arg = iter.next();
         }
@@ -150,6 +150,38 @@ fn parse_moves(args: &mut Peekable<Iter<&str>>) -> Vec<Move> {
     }
 
     return moves;
+}
+
+
+mod log {
+    use crate::engine::LogLevel;
+    use crate::protocol::uci::uci_out;
+
+    pub fn info(level: LogLevel, msg: &str) {
+        let enabled = match level {
+            LogLevel::INFO => true,
+            LogLevel::DEBUG => false,
+        };
+
+        if enabled {
+            log(msg);
+        }
+    }
+
+    pub fn debug(level: LogLevel, msg: &str) {
+        let enabled = match level {
+            LogLevel::INFO => true,
+            LogLevel::DEBUG => true,
+        };
+
+        if enabled {
+            log(msg);
+        }
+    }
+
+    pub fn log(msg: &str) {
+        uci_out::info_string(msg);
+    }
 }
 
 

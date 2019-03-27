@@ -5,16 +5,28 @@ pub mod mov;
 mod board;
 mod square;
 
+pub enum LogLevel {
+    INFO,
+    DEBUG,
+}
+
+
 pub struct Engine {
-    position: Board
+    log_fn: fn(LogLevel, &str),
+    position: Board,
 }
 
 
 impl Engine {
-    pub fn new() -> Engine {
+    pub fn new(log_fn: fn(LogLevel, &str)) -> Engine {
         Engine {
+            log_fn,
             position: Board::start_pos(),
         }
+    }
+
+    pub fn set_log_fn(&mut self, log_fn: fn(LogLevel, &str)) {
+        self.log_fn = log_fn;
     }
 
     pub fn reset(&mut self) {
@@ -30,7 +42,7 @@ impl Engine {
     }
 
     pub fn go(
-        &self,
+        &mut self,
         search_moves: Vec<Move>,
         ponder: bool,
         wtime: i32,
@@ -45,9 +57,14 @@ impl Engine {
         infinite: bool) {
 
         // TODO actually go
-        println!("info string search_moves {:#?} ponder {} wtime {} btime {} winc {} binc {} \
-          movestogo {} depth {} nodes {} mate {} movetime {} infinite {}",
-                 search_moves, ponder, wtime, btime, winc, binc,
-                 movestogo, depth, nodes, mate, movetime, infinite)
+        self.log(LogLevel::INFO, &format!(
+            "search_moves {:#?} ponder {} wtime {} btime {} winc {} binc {} \
+             movestogo {} depth {} nodes {} mate {} movetime {} infinite {}",
+            search_moves, ponder, wtime, btime, winc, binc,
+            movestogo, depth, nodes, mate, movetime, infinite));
+    }
+
+    fn log(&self, level: LogLevel, msg: &str) {
+        (self.log_fn)(level, msg);
     }
 }

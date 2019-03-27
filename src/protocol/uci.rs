@@ -1,7 +1,10 @@
 use std::process;
+use std::slice::Iter;
 
 use crate::engine::*;
+use crate::engine::mov::Move;
 use crate::protocol::Protocol;
+use std::iter::Peekable;
 
 pub struct Uci {
     engine: Engine,
@@ -58,8 +61,43 @@ impl Uci {
         }
     }
 
-    fn go(&self, _args: Vec<&str>) {
-        unimplemented!();
+    fn go(&self, args: Vec<&str>) {
+        let mut search_moves: Vec<Move> = Vec::new();
+        let mut ponder = false;
+        let mut wtime = 0;
+        let mut btime = 0;
+        let mut winc = 0;
+        let mut binc = 0;
+        let mut movestogo = 0;
+        let mut depth = 0;
+        let mut nodes = 0;
+        let mut mate = 0;
+        let mut movetime = 0;
+        let mut infinite = false;
+
+        let mut iter = args.iter().peekable();
+        let mut arg = iter.next();
+        while arg.is_some() {
+            match *arg.unwrap() {
+                "searchmoves" => search_moves = parse_moves(&mut iter),
+                "ponder" => ponder = true,
+                "wtime" => wtime = iter.next().unwrap_or(&"0").parse().unwrap(),
+                "btime" => btime = iter.next().unwrap_or(&"0").parse().unwrap(),
+                "winc" => winc = iter.next().unwrap_or(&"0").parse().unwrap(),
+                "binc" => binc = iter.next().unwrap_or(&"0").parse().unwrap(),
+                "movestogo" => movestogo = iter.next().unwrap_or(&"0").parse().unwrap(),
+                "depth" => depth = iter.next().unwrap_or(&"0").parse().unwrap(),
+                "nodes" => nodes = iter.next().unwrap_or(&"0").parse().unwrap(),
+                "mate" => mate = iter.next().unwrap_or(&"0").parse().unwrap(),
+                "movetime" => movetime = iter.next().unwrap_or(&"0").parse().unwrap(),
+                "infinite" => infinite = true,
+                _ => {},
+            }
+            arg = iter.next();
+        }
+
+        self.engine.go(search_moves, ponder, wtime, btime, winc, binc, movestogo, depth, nodes,
+                       mate, movetime, infinite)
     }
 
     fn stop(&self) {
@@ -102,4 +140,18 @@ impl Protocol for Uci {
 
 fn print_debug(msg: String) {
     println!("info string {}", msg)
+}
+
+
+fn parse_moves(args: &mut Peekable<Iter<&str>>) -> Vec<Move> {
+    let mut moves: Vec<Move> = Vec::new();
+
+    let mut mov: Option<Move> = Move::parse(args.peek().unwrap_or(&&""));
+    while mov.is_some() {
+        moves.push(mov.unwrap());
+        args.next();
+        mov = Move::parse(args.peek().unwrap_or(&&""))
+    }
+
+    return moves;
 }

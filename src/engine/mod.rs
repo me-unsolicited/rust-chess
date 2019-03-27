@@ -64,6 +64,12 @@ impl Engine {
             movestogo, depth, nodes, mate, movetime, infinite));
     }
 
+    pub fn stop(&self) {
+
+        self.log(LogLevel::DEBUG, "stopping");
+        // TODO stop searching
+    }
+
     fn log(&self, level: LogLevel, msg: &str) {
         (self.log_fn)(level, msg);
     }

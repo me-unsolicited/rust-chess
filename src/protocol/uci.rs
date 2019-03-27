@@ -102,7 +102,7 @@ impl Uci {
     }
 
     fn stop(&self) {
-        unimplemented!();
+        self.engine.stop();
     }
 
     fn ponderhit(&self) {

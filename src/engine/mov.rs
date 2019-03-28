@@ -8,17 +8,22 @@ pub struct Move {
 
 impl Move {
     pub fn parse(algebra: &str) -> Option<Move> {
+        let mut from: Option<Square> = None;
+        let mut to: Option<Square> = None;
 
-        println!("move: {}", algebra);
+        let len = algebra.len();
+        if [4, 5].contains(&len) {
+            from = Square::parse(&algebra[0..2]);
+            to = Square::parse(&algebra[2..4]);
+        }
 
-        // TODO support all the moves
-        if algebra != "a1a1" {
-            return Option::None;
+        if from.is_none() || to.is_none() {
+            return None;
         }
 
         Option::from(Move {
-            from: Square::A1,
-            to: Square::A1,
+            from: from.unwrap(),
+            to: to.unwrap(),
         })
     }
 }

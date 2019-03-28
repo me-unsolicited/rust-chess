@@ -97,8 +97,20 @@ impl Uci {
             arg = iter.next();
         }
 
-        self.engine.go(search_moves, ponder, wtime, btime, winc, binc, movestogo, depth, nodes,
-                       mate, movetime, infinite)
+        self.engine.go(GoParams {
+            search_moves,
+            ponder,
+            wtime,
+            btime,
+            winc,
+            binc,
+            movestogo,
+            depth,
+            nodes,
+            mate,
+            movetime,
+            infinite,
+        })
     }
 
     fn stop(&self) {

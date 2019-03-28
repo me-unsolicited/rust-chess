@@ -11,6 +11,22 @@ pub enum LogLevel {
 }
 
 
+pub struct GoParams {
+    pub search_moves: Vec<Move>,
+    pub ponder: bool,
+    pub wtime: i32,
+    pub btime: i32,
+    pub winc: i32,
+    pub binc: i32,
+    pub movestogo: i32,
+    pub depth: i32,
+    pub nodes: i32,
+    pub mate: i32,
+    pub movetime: i32,
+    pub infinite: bool,
+}
+
+
 pub struct Engine {
     log_fn: fn(LogLevel, &str),
     position: Board,
@@ -41,31 +57,17 @@ impl Engine {
         self.position = Board::new(fen);
     }
 
-    pub fn go(
-        &mut self,
-        search_moves: Vec<Move>,
-        ponder: bool,
-        wtime: i32,
-        btime: i32,
-        winc: i32,
-        binc: i32,
-        movestogo: i32,
-        depth: i32,
-        nodes: i32,
-        mate: i32,
-        movetime: i32,
-        infinite: bool) {
+    pub fn go(&mut self, p: GoParams) {
 
         // TODO actually go
         self.log(LogLevel::INFO, &format!(
             "search_moves {:#?} ponder {} wtime {} btime {} winc {} binc {} \
              movestogo {} depth {} nodes {} mate {} movetime {} infinite {}",
-            search_moves, ponder, wtime, btime, winc, binc,
-            movestogo, depth, nodes, mate, movetime, infinite));
+            p.search_moves, p.ponder, p.wtime, p.btime, p.winc, p.binc,
+            p.movestogo, p.depth, p.nodes, p.mate, p.movetime, p.infinite));
     }
 
     pub fn stop(&self) {
-
         self.log(LogLevel::DEBUG, "stopping");
         // TODO stop searching
     }

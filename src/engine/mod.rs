@@ -3,6 +3,7 @@ use crate::engine::mov::Move;
 
 pub mod mov;
 mod board;
+mod piece;
 mod square;
 
 pub enum LogLevel {

@@ -8,7 +8,7 @@ pub struct Square {
 
 lazy_static! {
     static ref SYMBOL_MAP: HashMap<&'static str, &'static Square> = {
-        let mut map = HashMap::with_capacity(64);
+        let mut map = HashMap::with_capacity(Square::SQUARES.len());
         for square in Square::SQUARES.iter() {
             map.insert(&square.symbol[..], *square);
         }

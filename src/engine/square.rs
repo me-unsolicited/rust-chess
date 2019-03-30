@@ -1,139 +1,104 @@
+use std::collections::HashMap;
+
 #[derive(Debug)]
-pub enum Square {
-    A1,
-    B1,
-    C1,
-    D1,
-    E1,
-    F1,
-    G1,
-    H1,
-    A2,
-    B2,
-    C2,
-    D2,
-    E2,
-    F2,
-    G2,
-    H2,
-    A3,
-    B3,
-    C3,
-    D3,
-    E3,
-    F3,
-    G3,
-    H3,
-    A4,
-    B4,
-    C4,
-    D4,
-    E4,
-    F4,
-    G4,
-    H4,
-    A5,
-    B5,
-    C5,
-    D5,
-    E5,
-    F5,
-    G5,
-    H5,
-    A6,
-    B6,
-    C6,
-    D6,
-    E6,
-    F6,
-    G6,
-    H6,
-    A7,
-    B7,
-    C7,
-    D7,
-    E7,
-    F7,
-    G7,
-    H7,
-    A8,
-    B8,
-    C8,
-    D8,
-    E8,
-    F8,
-    G8,
-    H8,
+pub struct Square {
+    idx: u8,
+    symbol: &'static str,
 }
 
+lazy_static! {
+    static ref SYMBOL_MAP: HashMap<&'static str, &'static Square> = {
+        let mut map = HashMap::with_capacity(64);
+        for square in Square::SQUARES.iter() {
+            map.insert(&square.symbol[..], *square);
+        }
+
+        map
+    };
+}
+
+
 impl Square {
-    pub fn parse(algebra: &str) -> Option<Square> {
-        match algebra {
-            "a1" => Option::from(Square::A1),
-            "b1" => Option::from(Square::B1),
-            "c1" => Option::from(Square::C1),
-            "d1" => Option::from(Square::D1),
-            "e1" => Option::from(Square::E1),
-            "f1" => Option::from(Square::F1),
-            "g1" => Option::from(Square::G1),
-            "h1" => Option::from(Square::H1),
-            "a2" => Option::from(Square::A2),
-            "b2" => Option::from(Square::B2),
-            "c2" => Option::from(Square::C2),
-            "d2" => Option::from(Square::D2),
-            "e2" => Option::from(Square::E2),
-            "f2" => Option::from(Square::F2),
-            "g2" => Option::from(Square::G2),
-            "h2" => Option::from(Square::H2),
-            "a3" => Option::from(Square::A3),
-            "b3" => Option::from(Square::B3),
-            "c3" => Option::from(Square::C3),
-            "d3" => Option::from(Square::D3),
-            "e3" => Option::from(Square::E3),
-            "f3" => Option::from(Square::F3),
-            "g3" => Option::from(Square::G3),
-            "h3" => Option::from(Square::H3),
-            "a4" => Option::from(Square::A4),
-            "b4" => Option::from(Square::B4),
-            "c4" => Option::from(Square::C4),
-            "d4" => Option::from(Square::D4),
-            "e4" => Option::from(Square::E4),
-            "f4" => Option::from(Square::F4),
-            "g4" => Option::from(Square::G4),
-            "h4" => Option::from(Square::H4),
-            "a5" => Option::from(Square::A5),
-            "b5" => Option::from(Square::B5),
-            "c5" => Option::from(Square::C5),
-            "d5" => Option::from(Square::D5),
-            "e5" => Option::from(Square::E5),
-            "f5" => Option::from(Square::F5),
-            "g5" => Option::from(Square::G5),
-            "h5" => Option::from(Square::H5),
-            "a6" => Option::from(Square::A6),
-            "b6" => Option::from(Square::B6),
-            "c6" => Option::from(Square::C6),
-            "d6" => Option::from(Square::D6),
-            "e6" => Option::from(Square::E6),
-            "f6" => Option::from(Square::F6),
-            "g6" => Option::from(Square::G6),
-            "h6" => Option::from(Square::H6),
-            "a7" => Option::from(Square::A7),
-            "b7" => Option::from(Square::B7),
-            "c7" => Option::from(Square::C7),
-            "d7" => Option::from(Square::D7),
-            "e7" => Option::from(Square::E7),
-            "f7" => Option::from(Square::F7),
-            "g7" => Option::from(Square::G7),
-            "h7" => Option::from(Square::H7),
-            "a8" => Option::from(Square::A8),
-            "b8" => Option::from(Square::B8),
-            "c8" => Option::from(Square::C8),
-            "d8" => Option::from(Square::D8),
-            "e8" => Option::from(Square::E8),
-            "f8" => Option::from(Square::F8),
-            "g8" => Option::from(Square::G8),
-            "h8" => Option::from(Square::H8),
-            _ => Option::None,
+    pub const A1: Self = Self { idx: 0, symbol: "a1" };
+    pub const B1: Self = Self { idx: 1, symbol: "b1" };
+    pub const C1: Self = Self { idx: 2, symbol: "c1" };
+    pub const D1: Self = Self { idx: 3, symbol: "d1" };
+    pub const E1: Self = Self { idx: 4, symbol: "e1" };
+    pub const F1: Self = Self { idx: 5, symbol: "f1" };
+    pub const G1: Self = Self { idx: 6, symbol: "g1" };
+    pub const H1: Self = Self { idx: 7, symbol: "h1" };
+    pub const A2: Self = Self { idx: 8, symbol: "a2" };
+    pub const B2: Self = Self { idx: 9, symbol: "b2" };
+    pub const C2: Self = Self { idx: 10, symbol: "c2" };
+    pub const D2: Self = Self { idx: 11, symbol: "d2" };
+    pub const E2: Self = Self { idx: 12, symbol: "e2" };
+    pub const F2: Self = Self { idx: 13, symbol: "f2" };
+    pub const G2: Self = Self { idx: 14, symbol: "g2" };
+    pub const H2: Self = Self { idx: 15, symbol: "h2" };
+    pub const A3: Self = Self { idx: 16, symbol: "a3" };
+    pub const B3: Self = Self { idx: 17, symbol: "b3" };
+    pub const C3: Self = Self { idx: 18, symbol: "c3" };
+    pub const D3: Self = Self { idx: 19, symbol: "d3" };
+    pub const E3: Self = Self { idx: 20, symbol: "e3" };
+    pub const F3: Self = Self { idx: 21, symbol: "f3" };
+    pub const G3: Self = Self { idx: 22, symbol: "g3" };
+    pub const H3: Self = Self { idx: 23, symbol: "h3" };
+    pub const A4: Self = Self { idx: 24, symbol: "a4" };
+    pub const B4: Self = Self { idx: 25, symbol: "b4" };
+    pub const C4: Self = Self { idx: 26, symbol: "c4" };
+    pub const D4: Self = Self { idx: 27, symbol: "d4" };
+    pub const E4: Self = Self { idx: 28, symbol: "e4" };
+    pub const F4: Self = Self { idx: 29, symbol: "f4" };
+    pub const G4: Self = Self { idx: 30, symbol: "g4" };
+    pub const H4: Self = Self { idx: 31, symbol: "h4" };
+    pub const A5: Self = Self { idx: 32, symbol: "a5" };
+    pub const B5: Self = Self { idx: 33, symbol: "b5" };
+    pub const C5: Self = Self { idx: 34, symbol: "c5" };
+    pub const D5: Self = Self { idx: 35, symbol: "d5" };
+    pub const E5: Self = Self { idx: 36, symbol: "e5" };
+    pub const F5: Self = Self { idx: 37, symbol: "f5" };
+    pub const G5: Self = Self { idx: 38, symbol: "g5" };
+    pub const H5: Self = Self { idx: 39, symbol: "h5" };
+    pub const A6: Self = Self { idx: 40, symbol: "a6" };
+    pub const B6: Self = Self { idx: 41, symbol: "b6" };
+    pub const C6: Self = Self { idx: 42, symbol: "c6" };
+    pub const D6: Self = Self { idx: 43, symbol: "d6" };
+    pub const E6: Self = Self { idx: 44, symbol: "e6" };
+    pub const F6: Self = Self { idx: 45, symbol: "f6" };
+    pub const G6: Self = Self { idx: 46, symbol: "g6" };
+    pub const H6: Self = Self { idx: 47, symbol: "h6" };
+    pub const A7: Self = Self { idx: 48, symbol: "a7" };
+    pub const B7: Self = Self { idx: 49, symbol: "b7" };
+    pub const C7: Self = Self { idx: 50, symbol: "c7" };
+    pub const D7: Self = Self { idx: 51, symbol: "d7" };
+    pub const E7: Self = Self { idx: 52, symbol: "e7" };
+    pub const F7: Self = Self { idx: 53, symbol: "f7" };
+    pub const G7: Self = Self { idx: 54, symbol: "g7" };
+    pub const H7: Self = Self { idx: 55, symbol: "h7" };
+    pub const A8: Self = Self { idx: 56, symbol: "a8" };
+    pub const B8: Self = Self { idx: 57, symbol: "b8" };
+    pub const C8: Self = Self { idx: 58, symbol: "c8" };
+    pub const D8: Self = Self { idx: 59, symbol: "d8" };
+    pub const E8: Self = Self { idx: 60, symbol: "e8" };
+    pub const F8: Self = Self { idx: 61, symbol: "f8" };
+    pub const G8: Self = Self { idx: 62, symbol: "g8" };
+    pub const H8: Self = Self { idx: 63, symbol: "h8" };
+
+    pub const SQUARES: [&'static Self; 64] = [
+        &Self::A1, &Self::B1, &Self::C1, &Self::D1, &Self::E1, &Self::F1, &Self::G1, &Self::H1,
+        &Self::A2, &Self::B2, &Self::C2, &Self::D2, &Self::E2, &Self::F2, &Self::G2, &Self::H2,
+        &Self::A3, &Self::B3, &Self::C3, &Self::D3, &Self::E3, &Self::F3, &Self::G3, &Self::H3,
+        &Self::A4, &Self::B4, &Self::C4, &Self::D4, &Self::E4, &Self::F4, &Self::G4, &Self::H4,
+        &Self::A5, &Self::B5, &Self::C5, &Self::D5, &Self::E5, &Self::F5, &Self::G5, &Self::H5,
+        &Self::A6, &Self::B6, &Self::C6, &Self::D6, &Self::E6, &Self::F6, &Self::G6, &Self::H6,
+        &Self::A7, &Self::B7, &Self::C7, &Self::D7, &Self::E7, &Self::F7, &Self::G7, &Self::H7,
+        &Self::A8, &Self::B8, &Self::C8, &Self::D8, &Self::E8, &Self::F8, &Self::G8, &Self::H8,
+    ];
+
+    pub fn parse(symbol: &str) -> Option<&'static Self> {
+        match SYMBOL_MAP.get(symbol) {
+            Some(square) => Option::from(*square),
+            None => None,
         }
     }
 }

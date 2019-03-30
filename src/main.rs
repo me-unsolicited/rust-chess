@@ -1,8 +1,11 @@
+#[macro_use]
+extern crate lazy_static;
+
 use std::{io, process};
 
 use colored::*;
-use crate::protocol::*;
 
+use crate::protocol::*;
 
 mod protocol;
 mod engine;

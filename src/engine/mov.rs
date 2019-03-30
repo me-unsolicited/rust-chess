@@ -3,15 +3,15 @@ use crate::engine::piece::*;
 
 #[derive(Debug)]
 pub struct Move {
-    from: Square,
-    to: Square,
+    from: &'static Square,
+    to: &'static Square,
     promotion: Option<Piece>,
 }
 
 impl Move {
     pub fn parse(algebra: &str) -> Option<Move> {
-        let mut from: Option<Square> = None;
-        let mut to: Option<Square> = None;
+        let mut from: Option<&Square> = None;
+        let mut to: Option<&Square> = None;
         let mut promotion: Option<Piece> = None;
 
         let len = algebra.len();

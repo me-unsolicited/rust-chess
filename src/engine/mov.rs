@@ -5,14 +5,14 @@ use crate::engine::piece::*;
 pub struct Move {
     from: &'static Square,
     to: &'static Square,
-    promotion: Option<Piece>,
+    promotion: Option<&'static PieceType>,
 }
 
 impl Move {
     pub fn parse(algebra: &str) -> Option<Move> {
         let mut from: Option<&Square> = None;
         let mut to: Option<&Square> = None;
-        let mut promotion: Option<Piece> = None;
+        let mut promotion: Option<&PieceType> = None;
 
         let len = algebra.len();
         if [4, 5].contains(&len) {
@@ -20,7 +20,7 @@ impl Move {
             to = Square::parse(&algebra[2..4]);
 
             if len == 5 {
-                promotion = Piece::parse(&algebra[4..5]);
+                promotion = PieceType::parse(&algebra[4..5]);
             }
         }
 

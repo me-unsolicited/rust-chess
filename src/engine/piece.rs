@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 #[derive(Debug)]
+#[derive(PartialEq, Eq)]
 pub struct PieceType {
     symbol: &'static str,
 }

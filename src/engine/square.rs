@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Square {
-    idx: u8,
-    symbol: &'static str,
+    pub idx: u8,
+    pub symbol: &'static str,
 }
 
 lazy_static! {
@@ -100,5 +100,9 @@ impl Square {
             Some(square) => Option::from(*square),
             None => None,
         }
+    }
+
+    pub fn at(rank: usize, file: usize) -> &'static Square {
+        Self::SQUARES[rank * 8 + file]
     }
 }

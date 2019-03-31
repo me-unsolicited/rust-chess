@@ -1,29 +1,174 @@
-const START_POS: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+use crate::engine::square::Square;
+use crate::engine::piece::PieceType;
+
+const START_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 pub struct Board {
+    placement: Placement,
+    turn: Color,
+    castle_rights: CastleRights,
+    en_passant_target: Option<&'static Square>,
+    halfmove_clock: u16,
+    fullmove_number: u16,
+}
+
+struct Placement {
     pawns: u64,
     knights: u64,
     bishops: u64,
     rooks: u64,
     queens: u64,
     kings: u64,
+
+    white: u64,
+    black: u64,
+}
+
+struct CastleRights {
+    kingside_w: bool,
+    queenside_w: bool,
+    kingside_b: bool,
+    queenside_b: bool,
+}
+
+enum Color {
+    WHITE = 0xffffff,
+    BLACK = 0x000000,
 }
 
 impl Board {
+    pub fn new(fen: &str) -> Board {
+        let mut parts = fen.split_whitespace();
 
-    pub fn new(_fen: &str) -> Board {
-        // TODO parse fen
+        let fen_placement = parts.next().expect("expected FEN piece placement");
+        let fen_turn = parts.next().expect("expected FEN active color");
+        let fen_castle_rights = parts.next().expect("expected FEN castling rights");
+        let fen_en_passant_target = parts.next().expect("expected FEN en passant target");
+        let fen_halfmove_clock = parts.next().expect("expected FEN halfmove clock");
+        let fen_fullmove_number = parts.next().expect("expected FEN fullmove number");
+
         Board {
-            pawns: 0,
-            knights: 0,
-            bishops: 0,
-            rooks: 0,
-            queens: 0,
-            kings: 0,
+            placement: parse_placement(fen_placement).expect("failed to parse FEN piece placement"),
+            turn: parse_turn(fen_turn).expect("failed to parse FEN en passant target"),
+            castle_rights: parse_castle_rights(fen_castle_rights).expect("failed to parse FEN castling rights"),
+            en_passant_target: Square::parse(fen_en_passant_target),
+            halfmove_clock: fen_halfmove_clock.parse().expect("failed to parse FEN halfmove clock"),
+            fullmove_number: fen_fullmove_number.parse().expect("failed to parse FEN fullmove number"),
         }
     }
 
-    pub fn start_pos() -> Board {
-        Board::new(START_POS)
+    pub fn start_pos() -> Board { Board::new(START_FEN) }
+}
+
+fn parse_placement(fen: &str) -> Result<Placement, &str> {
+    let mut pawns: u64 = 0;
+    let mut knights: u64 = 0;
+    let mut bishops: u64 = 0;
+    let mut rooks: u64 = 0;
+    let mut queens: u64 = 0;
+    let mut kings: u64 = 0;
+
+    let mut white: u64 = 0;
+    let mut black: u64 = 0;
+
+    let mut fen_ranks: Vec<&str> = fen.split_terminator("/").collect();
+    fen_ranks.reverse();
+    if fen_ranks.len() != 8 {
+        return Err(fen);
     }
+
+    for rank in 0..8 {
+        let fen_rank = fen_ranks[rank];
+
+        let mut file = 0;
+        for c in fen_rank.chars() {
+            let symbol = c.to_string();
+
+            if file >= 8 {
+                return Err(fen);
+            }
+
+            if let Ok(n) = symbol.parse::<usize>() {
+                file += n;
+                continue;
+            };
+
+            let square = Square::at(rank, file);
+
+            match PieceType::parse(&symbol[..]) {
+                Some(piece_type) => {
+                    match *piece_type {
+                        PieceType::PAWN => place(&mut pawns, square),
+                        PieceType::KNIGHT => place(&mut knights, square),
+                        PieceType::BISHOP => place(&mut bishops, square),
+                        PieceType::ROOK => place(&mut rooks, square),
+                        PieceType::QUEEN => place(&mut queens, square),
+                        PieceType::KING => place(&mut kings, square),
+                        _ => return Err(fen)
+                    };
+
+                    if c.is_uppercase() {
+                        place(&mut white, square);
+                    } else {
+                        place(&mut black, square);
+                    }
+                },
+                None => return Err(fen),
+            }
+
+            file += 1;
+        }
+    }
+
+    Result::Ok(Placement {
+        pawns,
+        knights,
+        bishops,
+        rooks,
+        queens,
+        kings,
+
+        white,
+        black,
+    })
+}
+
+fn parse_turn(fen: &str) -> Result<Color, &str> {
+    match fen {
+        "w" => Result::Ok(Color::WHITE),
+        "b" => Result::Ok(Color::BLACK),
+        _ => Err(fen),
+    }
+}
+
+fn parse_castle_rights(fen: &str) -> Result<CastleRights, &str> {
+    let mut kingside_w = false;
+    let mut queenside_w = false;
+    let mut kingside_b = false;
+    let mut queenside_b = false;
+
+    for c in fen.chars() {
+        if c == '-' {
+            break;
+        }
+
+        match c {
+            'K' => kingside_w = true,
+            'Q' => queenside_w = true,
+            'k' => kingside_b = true,
+            'q' => queenside_b = true,
+            _ => return Result::Err(fen),
+        }
+    }
+
+    Result::Ok(CastleRights {
+        kingside_w,
+        queenside_w,
+        kingside_b,
+        queenside_b,
+    })
+}
+
+fn place(target: &mut u64, square: &Square) {
+    *target |= 1 << square.idx;
 }

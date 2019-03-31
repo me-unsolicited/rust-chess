@@ -54,11 +54,14 @@ impl Uci {
     }
 
     fn position(&mut self, args: Vec<&str>) {
-        let arg: &str = *args.first().expect("expected fen");
-        if arg == "startpos" {
+
+        // join "args" back into a FEN string
+        let fen = args.join(" ");
+
+        if fen == "startpos" {
             self.engine.set_start_pos();
         } else {
-            self.engine.set_position(arg);
+            self.engine.set_position(&fen);
         }
     }
 

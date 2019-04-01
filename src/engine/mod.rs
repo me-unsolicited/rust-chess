@@ -1,6 +1,10 @@
+use std::sync::{Arc, Mutex};
+use std::thread;
+
 use crate::engine::board::Board;
 use crate::engine::mov::Move;
 use crate::engine::square::Square;
+use std::thread::JoinHandle;
 
 pub mod mov;
 mod board;
@@ -30,7 +34,13 @@ pub struct GoParams {
 
 
 pub struct Engine {
-    pub callbacks: Callbacks,
+    state: Arc<Mutex<EngineState>>,
+    threads: Vec<JoinHandle<()>>,
+}
+
+
+pub struct EngineState {
+    callbacks: Callbacks,
     position: Board,
 }
 
@@ -43,9 +53,14 @@ pub struct Callbacks {
 
 impl Engine {
     pub fn new(callbacks: Callbacks) -> Engine {
-        Engine {
+        let state = EngineState {
             callbacks,
             position: Board::start_pos(),
+        };
+
+        Engine {
+            state: Arc::new(Mutex::new(state)),
+            threads: Vec::new(),
         }
     }
 
@@ -54,21 +69,23 @@ impl Engine {
     }
 
     pub fn set_start_pos(&mut self) {
-        self.position = Board::start_pos();
+        self.state.lock().unwrap().position = Board::start_pos();
     }
 
     pub fn set_position(&mut self, fen: &str) {
-        self.position = Board::new(fen);
+        self.state.lock().unwrap().position = Board::new(fen);
     }
 
     pub fn go(&mut self, p: GoParams) {
+        let state = Arc::clone(&self.state);
+        let handle = thread::spawn(move || {
+            Self::search(state, p);
+        });
 
-        // TODO actually go
-        self.log(LogLevel::INFO, &format!(
-            "search_moves {:#?} ponder {} wtime {} btime {} winc {} binc {} \
-             movestogo {} depth {} nodes {} mate {} movetime {} infinite {}",
-            p.search_moves, p.ponder, p.wtime, p.btime, p.winc, p.binc,
-            p.movestogo, p.depth, p.nodes, p.mate, p.movetime, p.infinite));
+        self.threads.push(handle);
+    }
+
+    fn search(state: Arc<Mutex<EngineState>>, _p: GoParams) {
 
         let mov = Move {
             from: &Square::E2,
@@ -76,19 +93,15 @@ impl Engine {
             promotion: None,
         };
 
-        self.send_move(mov);
+        (state.lock().unwrap().callbacks.best_move_fn)(mov);
     }
 
     pub fn stop(&self) {
-        self.log(LogLevel::DEBUG, "stopping");
+        (self.state.lock().unwrap().callbacks.log_fn)(LogLevel::DEBUG, "stopping");
         // TODO stop searching
     }
 
-    fn send_move(&self, mov: Move) {
-        (self.callbacks.best_move_fn)(mov);
-    }
-
-    fn log(&self, level: LogLevel, msg: &str) {
-        (self.callbacks.log_fn)(level, msg);
+    pub fn update_log_fn(&mut self, log_fn: fn(LogLevel, &str)) {
+        self.state.lock().unwrap().callbacks.log_fn = log_fn;
     }
 }

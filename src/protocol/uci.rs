@@ -34,7 +34,7 @@ impl Uci {
         let debug = "on" == arg;
         log::log(&format!("debug is {}", debug));
         let log_fn = if debug { log::debug } else { log::info };
-        self.engine.callbacks.log_fn = log_fn;
+        self.engine.update_log_fn(log_fn);
     }
 
     fn isready(&self) {

@@ -3,9 +3,9 @@ use crate::engine::piece::*;
 
 #[derive(Debug)]
 pub struct Move {
-    from: &'static Square,
-    to: &'static Square,
-    promotion: Option<&'static PieceType>,
+    pub from: &'static Square,
+    pub to: &'static Square,
+    pub promotion: Option<&'static PieceType>,
 }
 
 impl Move {

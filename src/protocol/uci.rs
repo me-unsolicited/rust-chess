@@ -15,7 +15,10 @@ pub struct Uci {
 impl Uci {
     pub fn new() -> Uci {
         Uci {
-            engine: Engine::new(log::info),
+            engine: Engine::new(Callbacks {
+                log_fn: log::info,
+                best_move_fn: uci_out::bestmove,
+            }),
         }
     }
 
@@ -31,7 +34,7 @@ impl Uci {
         let debug = "on" == arg;
         log::log(&format!("debug is {}", debug));
         let log_fn = if debug { log::debug } else { log::info };
-        self.engine.set_log_fn(log_fn);
+        self.engine.callbacks.log_fn = log_fn;
     }
 
     fn isready(&self) {
@@ -202,6 +205,7 @@ mod log {
 
 mod uci_out {
     use std::collections::HashMap;
+    use crate::engine::mov::Move;
 
     pub fn id_name(name: &str) {
         println!("id name {}", name);
@@ -217,6 +221,19 @@ mod uci_out {
 
     pub fn readyok() {
         println!("readyok");
+    }
+
+    pub fn bestmove(mov: Move) {
+
+        let mut repr = String::new();
+        repr.push_str(mov.from.symbol);
+        repr.push_str(mov.to.symbol);
+
+        if mov.promotion.is_some() {
+            repr.push_str(mov.promotion.unwrap().symbol);
+        }
+
+        println!("bestmove {}", repr);
     }
 
     pub fn info_string(msg: &str) {

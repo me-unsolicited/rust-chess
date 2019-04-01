@@ -1,5 +1,6 @@
 use crate::engine::board::Board;
 use crate::engine::mov::Move;
+use crate::engine::square::Square;
 
 pub mod mov;
 mod board;
@@ -29,21 +30,23 @@ pub struct GoParams {
 
 
 pub struct Engine {
-    log_fn: fn(LogLevel, &str),
+    pub callbacks: Callbacks,
     position: Board,
 }
 
 
+pub struct Callbacks {
+    pub log_fn: fn(LogLevel, &str),
+    pub best_move_fn: fn(Move),
+}
+
+
 impl Engine {
-    pub fn new(log_fn: fn(LogLevel, &str)) -> Engine {
+    pub fn new(callbacks: Callbacks) -> Engine {
         Engine {
-            log_fn,
+            callbacks,
             position: Board::start_pos(),
         }
-    }
-
-    pub fn set_log_fn(&mut self, log_fn: fn(LogLevel, &str)) {
-        self.log_fn = log_fn;
     }
 
     pub fn reset(&mut self) {
@@ -66,6 +69,14 @@ impl Engine {
              movestogo {} depth {} nodes {} mate {} movetime {} infinite {}",
             p.search_moves, p.ponder, p.wtime, p.btime, p.winc, p.binc,
             p.movestogo, p.depth, p.nodes, p.mate, p.movetime, p.infinite));
+
+        let mov = Move {
+            from: &Square::E2,
+            to: &Square::E4,
+            promotion: None,
+        };
+
+        self.send_move(mov);
     }
 
     pub fn stop(&self) {
@@ -73,7 +84,11 @@ impl Engine {
         // TODO stop searching
     }
 
+    fn send_move(&self, mov: Move) {
+        (self.callbacks.best_move_fn)(mov);
+    }
+
     fn log(&self, level: LogLevel, msg: &str) {
-        (self.log_fn)(level, msg);
+        (self.callbacks.log_fn)(level, msg);
     }
 }

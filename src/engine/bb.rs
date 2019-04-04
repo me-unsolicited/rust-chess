@@ -4,6 +4,7 @@ lazy_static! {
     pub static ref PAWN_MOVES: [u64; 64] = init_pawn_moves();
     pub static ref PAWN_ATTACKS: [u64; 64] = init_pawn_attacks();
     pub static ref KNIGHT_MOVES: [u64; 64] = init_knight_moves();
+    pub static ref BISHOP_MOVES: [u64; 64] = init_bishop_moves();
 }
 
 fn init_pawn_moves() -> [u64; 64] {
@@ -82,6 +83,48 @@ fn init_knight_move(sq: usize) -> u64 {
     let eleven = to_bit(rank + 2, file - 1);
 
     one | two | four | five | seven | eight | ten | eleven
+}
+
+fn init_bishop_moves() -> [u64; 64] {
+    let mut moves = [u64; 64];
+    for sq in 0..64 {
+        moves[sq] = init_bishop_move(sq);
+    }
+
+    moves
+}
+
+
+fn init_bishop_move(sq: usize) -> u64 {
+    let (rank, file) = to_rank_file(sq);
+
+    // like a compass
+    //
+    // |NW|  |NE|
+    // |  | B|  |
+    // |SW|  |SE|
+
+    let ne = walk_to_edge(rank, file, 1, 1);
+    let se = walk_to_edge(rank, file, 1, -1);
+    let sw = walk_to_edge(rank, file, -1, -1);
+    let nw = walk_to_edge(rank, file, 1, -1);
+
+    ne | se | sw | nw
+}
+
+fn walk_to_edge(rank: usize, file: usize, rank_walk: i32, file_walk: i32) -> u64 {
+
+    let (mut r, mut f) = (rank, file);
+    let walk = NO_MOVE;
+    loop {
+        r += rank_walk;
+        f += file_walk;
+        let bit = to_bit(r, f);
+        walk |= bit;
+        if bit == NO_MOVE { break; }
+    }
+
+    walk
 }
 
 fn to_rank_file(sq: usize) -> (usize, usize) {

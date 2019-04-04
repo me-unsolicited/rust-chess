@@ -10,7 +10,7 @@ lazy_static! {
 }
 
 fn init_pawn_moves() -> [u64; 64] {
-    let mut moves = [u64; 64];
+    let mut moves: [u64; 64] = [0; 64];
     for sq in 0..64 {
         moves[sq] = init_pawn_move(sq);
     }
@@ -33,7 +33,7 @@ fn init_pawn_move(sq: usize) -> u64 {
 }
 
 fn init_pawn_attacks() -> [u64; 64] {
-    let mut moves = [u64; 64];
+    let mut moves: [u64; 64] = [0; 64];
     for sq in 0..64 {
         moves[sq] = init_pawn_attack(sq);
     }
@@ -55,7 +55,7 @@ fn init_pawn_attack(sq: usize) -> u64 {
 }
 
 fn init_knight_moves() -> [u64; 64] {
-    let mut moves = [u64; 64];
+    let mut moves: [u64; 64] = [0; 64];
     for sq in 0..64 {
         moves[sq] = init_knight_move(sq);
     }
@@ -87,7 +87,7 @@ fn init_knight_move(sq: usize) -> u64 {
 }
 
 fn init_bishop_moves() -> [u64; 64] {
-    let mut moves = [u64; 64];
+    let mut moves: [u64; 64] = [0; 64];
     for sq in 0..64 {
         moves[sq] = init_bishop_move(sq);
     }
@@ -113,7 +113,7 @@ fn init_bishop_move(sq: usize) -> u64 {
 }
 
 fn init_rook_moves() -> [u64; 64] {
-    let mut moves = [u64; 64];
+    let mut moves: [u64; 64] = [0; 64];
     for sq in 0..64 {
         moves[sq] = init_rook_move(sq);
     }
@@ -139,7 +139,7 @@ fn init_rook_move(sq: usize) -> u64 {
 }
 
 fn init_queen_moves() -> [u64; 64] {
-    let mut moves = [u64; 64];
+    let mut moves: [u64; 64] = [0; 64];
     for sq in 0..64 {
         moves[sq] = ROOK_MOVES[sq] | BISHOP_MOVES[sq];
     }
@@ -170,5 +170,5 @@ fn to_bit(rank: usize, file: usize) -> u64 {
         return NO_MOVE;
     }
 
-    1 << (u64)(rank * 8 + file)
+    (1 as u64) << (rank * 8 + file)
 }

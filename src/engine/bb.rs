@@ -5,6 +5,7 @@ lazy_static! {
     pub static ref PAWN_ATTACKS: [u64; 64] = init_pawn_attacks();
     pub static ref KNIGHT_MOVES: [u64; 64] = init_knight_moves();
     pub static ref BISHOP_MOVES: [u64; 64] = init_bishop_moves();
+    pub static ref ROOK_MOVES: [u64; 64] = init_rook_moves();
 }
 
 fn init_pawn_moves() -> [u64; 64] {
@@ -110,6 +111,33 @@ fn init_bishop_move(sq: usize) -> u64 {
     let nw = walk_to_edge(rank, file, 1, -1);
 
     ne | se | sw | nw
+}
+
+fn init_rook_moves() -> [u64; 64] {
+    let mut moves = [u64; 64];
+    for sq in 0..64 {
+        moves[sq] = init_rook_move(sq);
+    }
+
+    moves
+}
+
+
+fn init_rook_move(sq: usize) -> u64 {
+    let (rank, file) = to_rank_file(sq);
+
+    // like a compass
+    //
+    // | |N| |
+    // |W|R|E|
+    // | |S| |
+
+    let n = walk_to_edge(rank, file, 1, 0);
+    let e = walk_to_edge(rank, file, 0, 1);
+    let s = walk_to_edge(rank, file, -1, 0);
+    let w = walk_to_edge(rank, file, 0, -1);
+
+    n | e | s | w
 }
 
 fn walk_to_edge(rank: usize, file: usize, rank_walk: i32, file_walk: i32) -> u64 {

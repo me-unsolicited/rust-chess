@@ -21,15 +21,15 @@ fn init_pawn_moves() -> [u64; 64] {
 fn init_pawn_move(sq: usize) -> u64 {
     let (rank, file) = to_rank_file(sq);
 
-    if rank == 0 || rank == 8 {
+    if rank == 0 || rank == 7 {
         return NO_MOVE;
     }
 
-    if rank == 1 {
-        return to_bit(2, file) | to_bit(3, file);
+    if rank == 7 {
+        return to_bit(6, file) | to_bit(5, file);
     }
 
-    to_bit(rank + 1, file)
+    to_bit(rank - 1, file)
 }
 
 fn init_pawn_attacks() -> [u64; 64] {
@@ -44,12 +44,12 @@ fn init_pawn_attacks() -> [u64; 64] {
 fn init_pawn_attack(sq: usize) -> u64 {
     let (rank, file) = to_rank_file(sq);
 
-    if rank == 0 || rank == 8 {
+    if rank == 0 || rank == 7 {
         return NO_MOVE;
     }
 
-    let left = to_bit(rank + 1, file - 1);
-    let right = to_bit(rank + 1, file + 1);
+    let left = to_bit(rank - 1, file - 1);
+    let right = to_bit(rank - 1, file + 1);
 
     left | right
 }
@@ -63,7 +63,6 @@ fn init_knight_moves() -> [u64; 64] {
     moves
 }
 
-
 fn init_knight_move(sq: usize) -> u64 {
     let (rank, file) = to_rank_file(sq);
 
@@ -75,14 +74,14 @@ fn init_knight_move(sq: usize) -> u64 {
     // | 8|  |  |  | 4|
     // |  | 7|  | 5|  |
 
-    let one = to_bit(rank + 2, file + 1);
-    let two = to_bit(rank + 1, file + 2);
-    let four = to_bit(rank - 1, file + 2);
-    let five = to_bit(rank - 2, file + 1);
-    let seven = to_bit(rank - 2, file - 1);
-    let eight = to_bit(rank - 1, file - 2);
-    let ten = to_bit(rank + 1, file - 2);
-    let eleven = to_bit(rank + 2, file - 1);
+    let one = to_bit(rank - 2, file + 1);
+    let two = to_bit(rank - 1, file + 2);
+    let four = to_bit(rank + 1, file + 2);
+    let five = to_bit(rank + 2, file + 1);
+    let seven = to_bit(rank + 2, file - 1);
+    let eight = to_bit(rank + 1, file - 2);
+    let ten = to_bit(rank - 1, file - 2);
+    let eleven = to_bit(rank - 2, file - 1);
 
     one | two | four | five | seven | eight | ten | eleven
 }
@@ -96,7 +95,6 @@ fn init_bishop_moves() -> [u64; 64] {
     moves
 }
 
-
 fn init_bishop_move(sq: usize) -> u64 {
     let (rank, file) = to_rank_file(sq);
 
@@ -106,10 +104,10 @@ fn init_bishop_move(sq: usize) -> u64 {
     // |  | B|  |
     // |SW|  |SE|
 
-    let ne = walk_to_edge(rank, file, 1, 1);
-    let se = walk_to_edge(rank, file, 1, -1);
-    let sw = walk_to_edge(rank, file, -1, -1);
-    let nw = walk_to_edge(rank, file, 1, -1);
+    let ne = walk_to_edge(rank, file, -1, 1);
+    let se = walk_to_edge(rank, file, 1, 1);
+    let sw = walk_to_edge(rank, file, 1, -1);
+    let nw = walk_to_edge(rank, file, -1, -1);
 
     ne | se | sw | nw
 }
@@ -122,7 +120,6 @@ fn init_rook_moves() -> [u64; 64] {
 
     moves
 }
-
 
 fn init_rook_move(sq: usize) -> u64 {
     let (rank, file) = to_rank_file(sq);
@@ -151,7 +148,6 @@ fn init_queen_moves() -> [u64; 64] {
 }
 
 fn walk_to_edge(rank: usize, file: usize, rank_walk: i32, file_walk: i32) -> u64 {
-
     let (mut r, mut f) = (rank, file);
     let walk = NO_MOVE;
     loop {
@@ -170,7 +166,6 @@ fn to_rank_file(sq: usize) -> (usize, usize) {
 }
 
 fn to_bit(rank: usize, file: usize) -> u64 {
-
     if rank < 0 || rank > 7 || file < 0 || file > 7 {
         return NO_MOVE;
     }

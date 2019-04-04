@@ -166,7 +166,7 @@ fn to_rank_file(sq: usize) -> (usize, usize) {
 }
 
 fn to_bit(rank: usize, file: usize) -> u64 {
-    if rank < 0 || rank > 7 || file < 0 || file > 7 {
+    if rank > 7 || file > 7 {
         return NO_MOVE;
     }
 

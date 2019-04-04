@@ -223,7 +223,7 @@ mod uci_out {
         println!("readyok");
     }
 
-    pub fn bestmove(mov: Move) {
+    pub fn bestmove(mov: &Move) {
 
         let mut repr = String::new();
         repr.push_str(mov.from.symbol);

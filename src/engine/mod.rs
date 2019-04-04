@@ -1,10 +1,11 @@
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::thread::JoinHandle;
+
+use rand::prelude::*;
 
 use crate::engine::board::Board;
 use crate::engine::mov::Move;
-use crate::engine::square::Square;
-use std::thread::JoinHandle;
 
 pub mod mov;
 mod board;
@@ -47,7 +48,7 @@ pub struct EngineState {
 
 pub struct Callbacks {
     pub log_fn: fn(LogLevel, &str),
-    pub best_move_fn: fn(Move),
+    pub best_move_fn: fn(&Move),
 }
 
 
@@ -86,14 +87,14 @@ impl Engine {
     }
 
     fn search(state: Arc<Mutex<EngineState>>, _p: GoParams) {
+        let position = &state.lock().unwrap().position;
+        let moves = position.gen_moves();
 
-        let mov = Move {
-            from: &Square::E2,
-            to: &Square::E4,
-            promotion: None,
-        };
+        // galaxy brain search algorithm: pick a random move
+        let index = rand::thread_rng().gen_range(0, moves.len());
+        let mov = moves.get(index);
 
-        (state.lock().unwrap().callbacks.best_move_fn)(mov);
+        (state.lock().unwrap().callbacks.best_move_fn)(mov.unwrap());
     }
 
     pub fn stop(&self) {

@@ -1,5 +1,6 @@
-use crate::engine::square::Square;
+use crate::engine::mov::Move;
 use crate::engine::piece::PieceType;
+use crate::engine::square::Square;
 
 const START_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -58,6 +59,42 @@ impl Board {
     }
 
     pub fn start_pos() -> Board { Board::new(START_FEN) }
+
+    pub fn gen_moves(&self) -> Vec<Move> {
+        let mut moves = Vec::new();
+        moves.append(&mut self.gen_pawn_moves());
+        moves.append(&mut self.gen_knight_moves());
+        moves.append(&mut self.gen_bishop_moves());
+        moves.append(&mut self.gen_rook_moves());
+        moves.append(&mut self.gen_queen_moves());
+        moves.append(&mut self.gen_king_moves());
+
+        moves
+    }
+
+    pub fn gen_pawn_moves(&self) -> Vec<Move> {
+        Vec::new()
+    }
+
+    pub fn gen_knight_moves(&self) -> Vec<Move> {
+        Vec::new()
+    }
+
+    pub fn gen_bishop_moves(&self) -> Vec<Move> {
+        Vec::new()
+    }
+
+    pub fn gen_rook_moves(&self) -> Vec<Move> {
+        Vec::new()
+    }
+
+    pub fn gen_queen_moves(&self) -> Vec<Move> {
+        Vec::new()
+    }
+
+    pub fn gen_king_moves(&self) -> Vec<Move> {
+        Vec::new()
+    }
 }
 
 fn parse_placement(fen: &str) -> Result<Placement, &str> {
@@ -112,7 +149,7 @@ fn parse_placement(fen: &str) -> Result<Placement, &str> {
                     } else {
                         place(&mut black, square);
                     }
-                },
+                }
                 None => return Err(fen),
             }
 

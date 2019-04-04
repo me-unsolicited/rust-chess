@@ -151,8 +151,8 @@ fn walk_to_edge(rank: usize, file: usize, rank_walk: i32, file_walk: i32) -> u64
     let (mut r, mut f) = (rank, file);
     let walk = NO_MOVE;
     loop {
-        r += rank_walk;
-        f += file_walk;
+        r += rank_walk as usize;
+        f += file_walk as usize;
         let bit = to_bit(r, f);
         walk |= bit;
         if bit == NO_MOVE { break; }

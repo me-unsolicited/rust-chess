@@ -1,7 +1,14 @@
 use crate::engine::square::*;
 use crate::engine::piece::*;
 
-#[derive(Debug)]
+const PROMOTIONS: [PieceType; 4] = [
+    PieceType::KNIGHT,
+    PieceType::BISHOP,
+    PieceType::ROOK,
+    PieceType::QUEEN,
+];
+
+#[derive(Debug, Copy, Clone)]
 pub struct Move {
     pub from: &'static Square,
     pub to: &'static Square,
@@ -33,5 +40,16 @@ impl Move {
             to: to.unwrap(),
             promotion,
         })
+    }
+
+    pub fn enumerate_promotions(&self) -> Vec<Move> {
+        let mut moves = Vec::with_capacity(PROMOTIONS.len());
+        for promotion in PROMOTIONS.iter() {
+            let mut mov = *self;
+            mov.promotion = Option::from(promotion);
+            moves.push(mov);
+        }
+
+        moves
     }
 }

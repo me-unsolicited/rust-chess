@@ -103,11 +103,18 @@ impl Board {
                 continue;
             }
 
-            moves.push(Move {
+            let mov = Move {
                 from,
                 to: Square::SQUARES[to_sq as usize],
                 promotion: None,
-            });
+            };
+
+            let (rank, _) = bb::to_rank_file(to_sq);
+            if rank < 7 {
+                moves.push(mov);
+            } else {
+                moves.append(&mut mov.enumerate_promotions());
+            }
         }
 
         // attacks
@@ -123,11 +130,18 @@ impl Board {
                 continue;
             }
 
-            moves.push(Move {
+            let mov = Move {
                 from,
                 to: Square::SQUARES[to_sq as usize],
                 promotion: None,
-            })
+            };
+
+            let (rank, _) = bb::to_rank_file(to_sq);
+            if rank < 7 {
+                moves.push(mov);
+            } else {
+                moves.append(&mut mov.enumerate_promotions());
+            }
         }
 
         moves

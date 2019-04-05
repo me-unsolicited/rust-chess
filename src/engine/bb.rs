@@ -161,7 +161,7 @@ fn walk_to_edge(rank: i32, file: i32, rank_walk: i32, file_walk: i32) -> u64 {
     walk
 }
 
-fn to_rank_file(sq: i32) -> (i32, i32) {
+pub fn to_rank_file(sq: i32) -> (i32, i32) {
     (sq / 8, sq % 8)
 }
 

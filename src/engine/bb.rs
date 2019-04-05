@@ -172,3 +172,29 @@ fn to_bit(rank: usize, file: usize) -> u64 {
 
     (1 as u64) << (rank * 8 + file)
 }
+
+pub struct BitIterator {
+    bits: u64
+}
+
+impl From<u64> for BitIterator {
+    fn from(bits: u64) -> Self {
+        BitIterator { bits }
+    }
+}
+
+impl Iterator for BitIterator {
+    type Item = u32;
+
+    fn next(&mut self) -> Option<Self::Item> {
+
+        if self.bits == 0 {
+            return None;
+        }
+
+        let value = self.bits.trailing_zeros();
+        self.bits ^= 1 << value;
+
+        Some(value)
+    }
+}

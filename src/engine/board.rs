@@ -1,6 +1,7 @@
 use std::u64;
 
 use crate::engine::bb;
+use crate::engine::bb::BitIterator;
 use crate::engine::mov::Move;
 use crate::engine::piece::PieceType;
 use crate::engine::square::Square;
@@ -80,13 +81,10 @@ impl Board {
     }
 
     pub fn gen_pawn_moves(&self) -> Vec<Move> {
-
         let mut moves = Vec::new();
 
         let mut pawns = self.placement.white & self.placement.pawns;
-        while pawns != 0 {
-            let sq = pawns.trailing_zeros();
-            pawns ^= 1 << sq;
+        for sq in BitIterator::from(pawns) {
             moves.append(&mut self.gen_pawn_moves_from(sq));
         }
 
@@ -94,18 +92,15 @@ impl Board {
     }
 
     pub fn gen_pawn_moves_from(&self, sq: u32) -> Vec<Move> {
-
         let mut moves = Vec::new();
         let from = Square::SQUARES[sq as usize];
 
         let mut targets = bb::PAWN_MOVES[sq as usize];
-        while targets != 0 {
-            let to_sq = targets.trailing_zeros();
-            targets ^= 1 << to_sq;
+        for to_sq in BitIterator::from(targets) {
             moves.push(Move {
                 from,
                 to: Square::SQUARES[to_sq as usize],
-                promotion: None
+                promotion: None,
             });
         }
 

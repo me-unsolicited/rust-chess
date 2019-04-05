@@ -213,7 +213,36 @@ impl Board {
     }
 
     pub fn gen_rook_moves(&self) -> Vec<Move> {
-        Vec::new()
+        let mut moves = Vec::new();
+
+        let rooks = self.placement.white & self.placement.rooks;
+        for sq in BitIterator::from(rooks) {
+            moves.append(&mut self.gen_rook_moves_from(sq));
+        }
+
+        moves
+    }
+
+    pub fn gen_rook_moves_from(&self, sq: i32) -> Vec<Move> {
+        let mut moves = Vec::new();
+        let from = Square::SQUARES[sq as usize];
+
+        let targets = bb::ROOK_MOVES[sq as usize];
+        for to_sq in BitIterator::from(targets) {
+            let blockers = self.placement.white;
+            let captures = self.placement.black;
+            if bb::is_capture_blocked(sq, to_sq, blockers, captures) {
+                continue;
+            }
+
+            moves.push(Move {
+                from,
+                to: Square::SQUARES[to_sq as usize],
+                promotion: None
+            });
+        }
+
+        moves
     }
 
     pub fn gen_queen_moves(&self) -> Vec<Move> {

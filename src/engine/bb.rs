@@ -26,7 +26,7 @@ fn init_pawn_move(sq: usize) -> u64 {
     }
 
     if rank == 1 {
-        return to_bit(6, file) | to_bit(5, file);
+        return to_bit(2, file) | to_bit(3, file);
     }
 
     to_bit(rank + 1, file)

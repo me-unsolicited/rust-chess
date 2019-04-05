@@ -91,7 +91,7 @@ impl Board {
         moves
     }
 
-    pub fn gen_pawn_moves_from(&self, sq: u32) -> Vec<Move> {
+    pub fn gen_pawn_moves_from(&self, sq: i32) -> Vec<Move> {
         let mut moves = Vec::new();
         let from = Square::SQUARES[sq as usize];
 

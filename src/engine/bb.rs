@@ -12,13 +12,13 @@ lazy_static! {
 fn init_pawn_moves() -> [u64; 64] {
     let mut moves: [u64; 64] = [0; 64];
     for sq in 0..64 {
-        moves[sq] = init_pawn_move(sq);
+        moves[sq] = init_pawn_move(sq as i32);
     }
 
     moves
 }
 
-fn init_pawn_move(sq: usize) -> u64 {
+fn init_pawn_move(sq: i32) -> u64 {
     let (rank, file) = to_rank_file(sq);
 
     if rank == 0 || rank == 7 {
@@ -35,13 +35,13 @@ fn init_pawn_move(sq: usize) -> u64 {
 fn init_pawn_attacks() -> [u64; 64] {
     let mut moves: [u64; 64] = [0; 64];
     for sq in 0..64 {
-        moves[sq] = init_pawn_attack(sq);
+        moves[sq] = init_pawn_attack(sq as i32);
     }
 
     moves
 }
 
-fn init_pawn_attack(sq: usize) -> u64 {
+fn init_pawn_attack(sq: i32) -> u64 {
     let (rank, file) = to_rank_file(sq);
 
     if rank == 0 || rank == 7 {
@@ -57,13 +57,13 @@ fn init_pawn_attack(sq: usize) -> u64 {
 fn init_knight_moves() -> [u64; 64] {
     let mut moves: [u64; 64] = [0; 64];
     for sq in 0..64 {
-        moves[sq] = init_knight_move(sq);
+        moves[sq] = init_knight_move(sq as i32);
     }
 
     moves
 }
 
-fn init_knight_move(sq: usize) -> u64 {
+fn init_knight_move(sq: i32) -> u64 {
     let (rank, file) = to_rank_file(sq);
 
     // like clock hands; get it?
@@ -89,13 +89,13 @@ fn init_knight_move(sq: usize) -> u64 {
 fn init_bishop_moves() -> [u64; 64] {
     let mut moves: [u64; 64] = [0; 64];
     for sq in 0..64 {
-        moves[sq] = init_bishop_move(sq);
+        moves[sq] = init_bishop_move(sq as i32);
     }
 
     moves
 }
 
-fn init_bishop_move(sq: usize) -> u64 {
+fn init_bishop_move(sq: i32) -> u64 {
     let (rank, file) = to_rank_file(sq);
 
     // like a compass
@@ -115,13 +115,13 @@ fn init_bishop_move(sq: usize) -> u64 {
 fn init_rook_moves() -> [u64; 64] {
     let mut moves: [u64; 64] = [0; 64];
     for sq in 0..64 {
-        moves[sq] = init_rook_move(sq);
+        moves[sq] = init_rook_move(sq as i32);
     }
 
     moves
 }
 
-fn init_rook_move(sq: usize) -> u64 {
+fn init_rook_move(sq: i32) -> u64 {
     let (rank, file) = to_rank_file(sq);
 
     // like a compass
@@ -147,12 +147,12 @@ fn init_queen_moves() -> [u64; 64] {
     moves
 }
 
-fn walk_to_edge(rank: usize, file: usize, rank_walk: i32, file_walk: i32) -> u64 {
+fn walk_to_edge(rank: i32, file: i32, rank_walk: i32, file_walk: i32) -> u64 {
     let (mut r, mut f) = (rank, file);
     let mut walk = NO_MOVE;
     loop {
-        r += rank_walk as usize;
-        f += file_walk as usize;
+        r += rank_walk;
+        f += file_walk;
         let bit = to_bit(r, f);
         walk |= bit;
         if bit == NO_MOVE { break; }
@@ -161,26 +161,21 @@ fn walk_to_edge(rank: usize, file: usize, rank_walk: i32, file_walk: i32) -> u64
     walk
 }
 
-fn to_rank_file(sq: usize) -> (usize, usize) {
+fn to_rank_file(sq: i32) -> (i32, i32) {
     (sq / 8, sq % 8)
 }
 
-fn to_bit(rank: usize, file: usize) -> u64 {
-    if rank > 7 || file > 7 {
+fn to_bit(rank: i32, file: i32) -> u64 {
+    if rank < 0 || rank > 7 || file < 0 || file > 7 {
         return NO_MOVE;
     }
 
     (1 as u64) << (rank * 8 + file)
 }
 
-pub fn is_blocked(from: u32, to: u32, blockers: u64) -> bool {
-    let (from_rank, from_file) = to_rank_file(from as usize);
-    let (to_rank, to_file) = to_rank_file(to as usize);
-
-    let from_rank = from_rank as i32;
-    let from_file = from_file as i32;
-    let to_rank = to_rank as i32;
-    let to_file = to_file as i32;
+pub fn is_blocked(from: i32, to: i32, blockers: u64) -> bool {
+    let (from_rank, from_file) = to_rank_file(from);
+    let (to_rank, to_file) = to_rank_file(to);
 
     let rank_dir = (to_rank - from_rank).signum();
     let file_dir = (to_file - from_file).signum();
@@ -195,7 +190,7 @@ pub fn is_blocked(from: u32, to: u32, blockers: u64) -> bool {
     while !blocked && (!reached_rank || !reached_file) {
         rank += rank_dir;
         file += file_dir;
-        blocked = NO_MOVE != blockers & to_bit(rank as usize, file as usize);
+        blocked = NO_MOVE != blockers & to_bit(rank, file);
         reached_rank = reached_rank || rank == to_rank;
         reached_file = reached_file || file == to_file;
     }
@@ -214,7 +209,7 @@ impl From<u64> for BitIterator {
 }
 
 impl Iterator for BitIterator {
-    type Item = u32;
+    type Item = i32;
 
     fn next(&mut self) -> Option<Self::Item> {
 
@@ -225,6 +220,6 @@ impl Iterator for BitIterator {
         let value = self.bits.trailing_zeros();
         self.bits ^= 1 << value;
 
-        Some(value)
+        Some(value as i32)
     }
 }

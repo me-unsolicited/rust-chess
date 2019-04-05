@@ -173,6 +173,36 @@ fn to_bit(rank: usize, file: usize) -> u64 {
     (1 as u64) << (rank * 8 + file)
 }
 
+pub fn trace(from: u32, to: u32) -> u64 {
+    let (from_rank, from_file) = to_rank_file(from as usize);
+    let (to_rank, to_file) = to_rank_file(to as usize);
+
+    let from_rank = from_rank as i32;
+    let from_file = from_file as i32;
+    let to_rank = to_rank as i32;
+    let to_file = to_file as i32;
+
+    let rank_dir = (to_rank - from_rank).signum();
+    let file_dir = (to_file - from_file).signum();
+
+    let mut reached_rank = rank_dir == 0;
+    let mut reached_file = file_dir == 0;
+
+    let mut rank = from_rank;
+    let mut file = from_file;
+
+    let mut trace = NO_MOVE;
+    while !reached_rank || !reached_file {
+        rank += rank_dir;
+        file += file_dir;
+        trace |= to_bit(rank as usize, file as usize);
+        reached_rank = reached_rank || rank == to_rank;
+        reached_file = reached_file || file == to_file;
+    }
+
+    trace
+}
+
 pub struct BitIterator {
     bits: u64
 }

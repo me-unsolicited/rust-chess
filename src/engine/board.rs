@@ -97,6 +97,12 @@ impl Board {
 
         let mut targets = bb::PAWN_MOVES[sq as usize];
         for to_sq in BitIterator::from(targets) {
+            let trace = bb::trace(sq, to_sq);
+            let blocked = trace != trace & !self.placement.black;
+            if blocked {
+                continue;
+            }
+
             moves.push(Move {
                 from,
                 to: Square::SQUARES[to_sq as usize],

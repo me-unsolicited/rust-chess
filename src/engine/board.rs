@@ -148,7 +148,34 @@ impl Board {
     }
 
     pub fn gen_knight_moves(&self) -> Vec<Move> {
-        Vec::new()
+        let mut moves = Vec::new();
+
+        let knights = self.placement.white & self.placement.knights;
+        for sq in BitIterator::from(knights) {
+            moves.append(&mut self.gen_knight_moves_from(sq));
+        }
+
+        moves
+    }
+    pub fn gen_knight_moves_from(&self, sq: i32) -> Vec<Move> {
+        let mut moves = Vec::new();
+        let from = Square::SQUARES[sq as usize];
+
+        let targets = bb::KNIGHT_MOVES[sq as usize];
+        for to_sq in BitIterator::from(targets) {
+            let blocked = 0 != self.placement.white & (1 << to_sq);
+            if blocked {
+                continue;
+            }
+
+            moves.push(Move {
+                from,
+                to: Square::SQUARES[to_sq as usize],
+                promotion: None
+            });
+        }
+
+        moves
     }
 
     pub fn gen_bishop_moves(&self) -> Vec<Move> {

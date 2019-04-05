@@ -97,9 +97,8 @@ impl Board {
 
         let targets = bb::PAWN_MOVES[sq as usize];
         for to_sq in BitIterator::from(targets) {
-            let trace = bb::trace(sq, to_sq);
-            let blocked = trace != trace & !self.placement.black;
-            if blocked {
+            let blockers = self.placement.white | self.placement.black;
+            if bb::is_blocked(sq, to_sq, blockers) {
                 continue;
             }
 

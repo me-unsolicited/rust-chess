@@ -173,7 +173,7 @@ fn to_bit(rank: usize, file: usize) -> u64 {
     (1 as u64) << (rank * 8 + file)
 }
 
-pub fn trace(from: u32, to: u32) -> u64 {
+pub fn is_blocked(from: u32, to: u32, blockers: u64) -> bool {
     let (from_rank, from_file) = to_rank_file(from as usize);
     let (to_rank, to_file) = to_rank_file(to as usize);
 
@@ -185,22 +185,22 @@ pub fn trace(from: u32, to: u32) -> u64 {
     let rank_dir = (to_rank - from_rank).signum();
     let file_dir = (to_file - from_file).signum();
 
+    let mut blocked = false;
     let mut reached_rank = rank_dir == 0;
     let mut reached_file = file_dir == 0;
 
     let mut rank = from_rank;
     let mut file = from_file;
 
-    let mut trace = NO_MOVE;
-    while !reached_rank || !reached_file {
+    while !blocked && (!reached_rank || !reached_file) {
         rank += rank_dir;
         file += file_dir;
-        trace |= to_bit(rank as usize, file as usize);
+        blocked = NO_MOVE != blockers & to_bit(rank as usize, file as usize);
         reached_rank = reached_rank || rank == to_rank;
         reached_file = reached_file || file == to_file;
     }
 
-    trace
+    blocked
 }
 
 pub struct BitIterator {

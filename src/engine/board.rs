@@ -1,9 +1,13 @@
+use std::u64;
+
+use crate::engine::bb;
 use crate::engine::mov::Move;
 use crate::engine::piece::PieceType;
 use crate::engine::square::Square;
 
 const START_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+#[derive(Copy, Clone)]
 pub struct Board {
     placement: Placement,
     turn: Color,
@@ -13,6 +17,7 @@ pub struct Board {
     fullmove_number: u16,
 }
 
+#[derive(Copy, Clone)]
 struct Placement {
     pawns: u64,
     knights: u64,
@@ -25,6 +30,7 @@ struct Placement {
     black: u64,
 }
 
+#[derive(Copy, Clone)]
 struct CastleRights {
     kingside_w: bool,
     queenside_w: bool,
@@ -32,6 +38,7 @@ struct CastleRights {
     queenside_b: bool,
 }
 
+#[derive(Copy, Clone)]
 enum Color {
     WHITE = 0xffffff,
     BLACK = 0x000000,
@@ -73,7 +80,36 @@ impl Board {
     }
 
     pub fn gen_pawn_moves(&self) -> Vec<Move> {
-        Vec::new()
+
+        let mut moves = Vec::new();
+
+        let mut pawns = self.placement.white & self.placement.pawns;
+        while pawns != 0 {
+            let sq = pawns.trailing_zeros();
+            pawns ^= 1 << sq;
+            moves.append(&mut self.gen_pawn_moves_from(sq));
+        }
+
+        moves
+    }
+
+    pub fn gen_pawn_moves_from(&self, sq: u32) -> Vec<Move> {
+
+        let mut moves = Vec::new();
+        let from = Square::SQUARES[sq as usize];
+
+        let mut targets = bb::PAWN_MOVES[sq as usize];
+        while targets != 0 {
+            let to_sq = targets.trailing_zeros();
+            targets ^= 1 << to_sq;
+            moves.push(Move {
+                from,
+                to: Square::SQUARES[to_sq as usize],
+                promotion: None
+            });
+        }
+
+        moves
     }
 
     pub fn gen_knight_moves(&self) -> Vec<Move> {

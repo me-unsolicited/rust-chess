@@ -8,6 +8,7 @@ use crate::engine::board::Board;
 use crate::engine::mov::Move;
 
 pub mod mov;
+mod bb;
 mod board;
 mod piece;
 mod square;
@@ -87,7 +88,7 @@ impl Engine {
     }
 
     fn search(state: Arc<Mutex<EngineState>>, _p: GoParams) {
-        let position = &state.lock().unwrap().position;
+        let position = state.lock().unwrap().position;
         let moves = position.gen_moves();
 
         // galaxy brain search algorithm: pick a random move

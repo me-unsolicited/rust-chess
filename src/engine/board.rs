@@ -95,6 +95,7 @@ impl Board {
         let mut moves = Vec::new();
         let from = Square::SQUARES[sq as usize];
 
+        // non-attacking moves
         let targets = bb::PAWN_MOVES[sq as usize];
         for to_sq in BitIterator::from(targets) {
             let blockers = self.placement.white | self.placement.black;
@@ -107,6 +108,26 @@ impl Board {
                 to: Square::SQUARES[to_sq as usize],
                 promotion: None,
             });
+        }
+
+        // attacks
+        let targets = bb::PAWN_ATTACKS[sq as usize];
+        for to_sq in BitIterator::from(targets) {
+            let ep_capture = if self.en_passant_target.is_some() {
+                1 << self.en_passant_target.unwrap().idx
+            } else {
+                0
+            };
+            let captures = self.placement.black | ep_capture;
+            if 0 == captures & (1 << to_sq) {
+                continue;
+            }
+
+            moves.push(Move {
+                from,
+                to: Square::SQUARES[to_sq as usize],
+                promotion: None,
+            })
         }
 
         moves

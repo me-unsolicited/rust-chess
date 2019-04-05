@@ -25,11 +25,11 @@ fn init_pawn_move(sq: usize) -> u64 {
         return NO_MOVE;
     }
 
-    if rank == 7 {
+    if rank == 1 {
         return to_bit(6, file) | to_bit(5, file);
     }
 
-    to_bit(rank - 1, file)
+    to_bit(rank + 1, file)
 }
 
 fn init_pawn_attacks() -> [u64; 64] {
@@ -48,8 +48,8 @@ fn init_pawn_attack(sq: usize) -> u64 {
         return NO_MOVE;
     }
 
-    let left = to_bit(rank - 1, file - 1);
-    let right = to_bit(rank - 1, file + 1);
+    let left = to_bit(rank + 1, file - 1);
+    let right = to_bit(rank + 1, file + 1);
 
     left | right
 }
@@ -74,14 +74,14 @@ fn init_knight_move(sq: usize) -> u64 {
     // | 8|  |  |  | 4|
     // |  | 7|  | 5|  |
 
-    let one = to_bit(rank - 2, file + 1);
-    let two = to_bit(rank - 1, file + 2);
-    let four = to_bit(rank + 1, file + 2);
-    let five = to_bit(rank + 2, file + 1);
-    let seven = to_bit(rank + 2, file - 1);
-    let eight = to_bit(rank + 1, file - 2);
-    let ten = to_bit(rank - 1, file - 2);
-    let eleven = to_bit(rank - 2, file - 1);
+    let one = to_bit(rank + 2, file + 1);
+    let two = to_bit(rank + 1, file + 2);
+    let four = to_bit(rank - 1, file + 2);
+    let five = to_bit(rank - 2, file + 1);
+    let seven = to_bit(rank - 2, file - 1);
+    let eight = to_bit(rank - 1, file - 2);
+    let ten = to_bit(rank + 1, file - 2);
+    let eleven = to_bit(rank + 2, file - 1);
 
     one | two | four | five | seven | eight | ten | eleven
 }

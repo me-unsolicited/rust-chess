@@ -83,7 +83,7 @@ impl Board {
     pub fn gen_pawn_moves(&self) -> Vec<Move> {
         let mut moves = Vec::new();
 
-        let mut pawns = self.placement.white & self.placement.pawns;
+        let pawns = self.placement.white & self.placement.pawns;
         for sq in BitIterator::from(pawns) {
             moves.append(&mut self.gen_pawn_moves_from(sq));
         }

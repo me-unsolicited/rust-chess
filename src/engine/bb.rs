@@ -204,6 +204,14 @@ fn to_bit(rank: i32, file: i32) -> u64 {
     (1 as u64) << (rank * 8 + file)
 }
 
+pub fn to_sq(bit: u64) -> i32 {
+    bit.trailing_zeros() as i32
+}
+
+pub fn mirror_sq(sq: i32) -> i32 {
+    sq ^ 56
+}
+
 pub fn is_blocked(from: i32, to: i32, blockers: u64) -> bool {
     let (from_rank, from_file) = to_rank_file(from);
     let (to_rank, to_file) = to_rank_file(to);
@@ -257,6 +265,33 @@ pub fn is_capture_blocked(from: i32, to: i32, blockers: u64, captures: u64) -> b
     blocked || (capture && (!reached_rank || !reached_file))
 }
 
+pub fn walk_towards(from: i32, to: i32, blockers: u64) -> (bool, u64) {
+    let (from_rank, from_file) = to_rank_file(from);
+    let (to_rank, to_file) = to_rank_file(to);
+
+    let rank_dir = (to_rank - from_rank).signum();
+    let file_dir = (to_file - from_file).signum();
+
+    let mut blocked = false;
+    let mut reached_rank = rank_dir == 0;
+    let mut reached_file = file_dir == 0;
+
+    let mut rank = from_rank;
+    let mut file = from_file;
+    let mut walk = 0;
+
+    while !blocked && (!reached_rank || !reached_file) {
+        rank += rank_dir;
+        file += file_dir;
+        walk |= to_bit(rank, file);
+        blocked = NO_MOVE != blockers & walk;
+        reached_rank = reached_rank || rank == to_rank;
+        reached_file = reached_file || file == to_file;
+    }
+
+    (reached_rank && reached_file, walk)
+}
+
 pub fn clear_bit(pieces: u64, sq: i32) -> u64 {
     pieces & !(1 << sq)
 }
@@ -283,7 +318,6 @@ impl Iterator for BitIterator {
     type Item = i32;
 
     fn next(&mut self) -> Option<Self::Item> {
-
         if self.bits == 0 {
             return None;
         }

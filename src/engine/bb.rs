@@ -257,6 +257,18 @@ pub fn is_capture_blocked(from: i32, to: i32, blockers: u64, captures: u64) -> b
     blocked || (capture && (!reached_rank || !reached_file))
 }
 
+pub fn clear_bit(pieces: u64, sq: i32) -> u64 {
+    pieces & !(1 << sq)
+}
+
+pub fn set_bit(pieces: u64, sq: i32) -> u64 {
+    pieces | (1 << sq)
+}
+
+pub fn has_bit(pieces: u64, sq: i32) -> bool {
+    0 != pieces & (1 << sq)
+}
+
 pub struct BitIterator {
     bits: u64
 }

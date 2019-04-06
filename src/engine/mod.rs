@@ -87,8 +87,15 @@ impl Engine {
         self.threads.push(handle);
     }
 
-    fn search(state: Arc<Mutex<EngineState>>, _p: GoParams) {
-        let position = state.lock().unwrap().position;
+    fn search(state: Arc<Mutex<EngineState>>, p: GoParams) {
+
+        let root_position = state.lock().unwrap().position;
+
+        let mut position = root_position;
+        for mov in p.search_moves {
+            position = position.update(mov);
+        }
+
         let moves = position.gen_moves();
 
         // galaxy brain search algorithm: pick a random move

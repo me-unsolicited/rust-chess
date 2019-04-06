@@ -39,10 +39,19 @@ struct CastleRights {
     queenside_b: bool,
 }
 
-#[derive(Copy, Clone)]
+#[derive(PartialEq, Copy, Clone)]
 enum Color {
     WHITE = 0xffffff,
     BLACK = 0x000000,
+}
+
+impl Color {
+    fn other(&self) -> Self {
+        match self {
+            Color::WHITE => Color::BLACK,
+            Color::BLACK => Color::WHITE,
+        }
+    }
 }
 
 impl Board {
@@ -69,6 +78,7 @@ impl Board {
     pub fn start_pos() -> Board { Board::new(START_FEN) }
 
     pub fn gen_moves(&self) -> Vec<Move> {
+
         let mut moves = Vec::new();
         moves.append(&mut self.gen_pawn_moves());
         moves.append(&mut self.gen_knight_moves());
@@ -172,7 +182,7 @@ impl Board {
             moves.push(Move {
                 from,
                 to: Square::SQUARES[to_sq as usize],
-                promotion: None
+                promotion: None,
             });
         }
 
@@ -205,7 +215,7 @@ impl Board {
             moves.push(Move {
                 from,
                 to: Square::SQUARES[to_sq as usize],
-                promotion: None
+                promotion: None,
             });
         }
 
@@ -238,7 +248,7 @@ impl Board {
             moves.push(Move {
                 from,
                 to: Square::SQUARES[to_sq as usize],
-                promotion: None
+                promotion: None,
             });
         }
 
@@ -271,7 +281,7 @@ impl Board {
             moves.push(Move {
                 from,
                 to: Square::SQUARES[to_sq as usize],
-                promotion: None
+                promotion: None,
             });
         }
 
@@ -304,11 +314,127 @@ impl Board {
             moves.push(Move {
                 from,
                 to: Square::SQUARES[to_sq as usize],
-                promotion: None
+                promotion: None,
             });
         }
 
         moves
+    }
+
+    pub fn update(&self, mov: Move) -> Self {
+        let from_sq = mov.from.idx as i32;
+        let to_sq = mov.to.idx as i32;
+
+        let mut pawns = self.placement.pawns;
+        let mut knights = self.placement.knights;
+        let mut bishops = self.placement.bishops;
+        let mut rooks = self.placement.rooks;
+        let mut queens = self.placement.queens;
+        let mut kings = self.placement.kings;
+
+        let mut moving = None;
+        if bb::has_bit(pawns, from_sq) {
+            pawns = bb::clear_bit(pawns, from_sq);
+            moving = Some(&PieceType::PAWN);
+        } else if bb::has_bit(knights, from_sq) {
+            knights = bb::clear_bit(knights, from_sq);
+            moving = Some(&PieceType::KNIGHT);
+        } else if bb::has_bit(bishops, from_sq) {
+            bishops = bb::clear_bit(bishops, from_sq);
+            moving = Some(&PieceType::BISHOP);
+        } else if bb::has_bit(rooks, from_sq) {
+            rooks = bb::clear_bit(rooks, from_sq);
+            moving = Some(&PieceType::ROOK);
+        } else if bb::has_bit(queens, from_sq) {
+            queens = bb::clear_bit(queens, from_sq);
+            moving = Some(&PieceType::QUEEN);
+        } else if bb::has_bit(kings, from_sq) {
+            kings = bb::clear_bit(kings, from_sq);
+            moving = Some(&PieceType::KING);
+        }
+
+        let moving = moving.expect("tried to move a missing piece");
+        let setting = match mov.promotion {
+            Some(pt) => pt,
+            _ => moving,
+        };
+
+        match *setting {
+            PieceType::PAWN => { pawns = bb::set_bit(pawns, to_sq); }
+            PieceType::KNIGHT => { knights = bb::set_bit(knights, to_sq); }
+            PieceType::BISHOP => { bishops = bb::set_bit(bishops, to_sq); }
+            PieceType::ROOK => { rooks = bb::set_bit(rooks, to_sq); }
+            PieceType::QUEEN => { queens = bb::set_bit(queens, to_sq); }
+            PieceType::KING => { kings = bb::set_bit(kings, to_sq); }
+            _ => panic!("somehow setting down an unknown piece type"),
+        }
+
+        let mut capture_sq = to_sq;
+        if *moving == PieceType::PAWN && self.en_passant_target.is_some() &&
+            to_sq == self.en_passant_target.unwrap().idx as i32 {
+            if self.turn == Color::WHITE {
+                capture_sq -= 8;
+            } else {
+                capture_sq += 8;
+            }
+        }
+
+        bb::clear_bit(pawns, capture_sq);
+        bb::clear_bit(knights, capture_sq);
+        bb::clear_bit(bishops, capture_sq);
+        bb::clear_bit(rooks, capture_sq);
+        bb::clear_bit(kings, capture_sq);
+        bb::clear_bit(queens, capture_sq);
+
+        let mut white = self.placement.white;
+        let mut black = self.placement.black;
+
+        match self.turn {
+            Color::WHITE => {
+                white = bb::clear_bit(white, from_sq);
+                white = bb::set_bit(white, to_sq);
+                black = bb::clear_bit(black, capture_sq);
+            }
+            Color::BLACK => {
+                black = bb::clear_bit(black, from_sq);
+                black = bb::set_bit(black, to_sq);
+                white = bb::clear_bit(white, capture_sq);
+            }
+        }
+
+        let (from_rank, _) = bb::to_rank_file(from_sq);
+        let (to_rank, _) = bb::to_rank_file(to_sq);
+        let mut en_passant_target = None;
+        if *moving == PieceType::PAWN {
+            if self.turn == Color::WHITE && from_rank == 1 && to_rank == 3 {
+                en_passant_target = Some(Square::SQUARES[(to_sq - 8) as usize]);
+            } else if self.turn == Color::BLACK && from_rank == 6 && to_rank == 4 {
+                en_passant_target = Some(Square::SQUARES[(to_sq + 8) as usize]);
+            }
+        }
+
+        Board {
+            placement: Placement {
+                pawns,
+                knights,
+                bishops,
+                rooks,
+                queens,
+                kings,
+                white,
+                black,
+            },
+            turn: self.turn.other(),
+            castle_rights: CastleRights {
+                kingside_w: self.castle_rights.kingside_w,
+                queenside_w: self.castle_rights.queenside_w,
+                kingside_b: self.castle_rights.kingside_b,
+                queenside_b: self.castle_rights.queenside_b,
+            },
+            en_passant_target,
+            halfmove_clock: 0,
+            fullmove_number: 0,
+        }
     }
 }
 

@@ -52,4 +52,12 @@ impl Move {
 
         moves
     }
+
+    pub fn mirror(&self) -> Move {
+        Move {
+            from: self.from.mirror(),
+            to: self.to.mirror(),
+            promotion: self.promotion
+        }
+    }
 }

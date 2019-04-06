@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+const MAGIC_MIRROR: u8 = 56;
+
 #[derive(Debug)]
 pub struct Square {
     pub idx: u8,
@@ -104,5 +106,9 @@ impl Square {
 
     pub fn at(rank: usize, file: usize) -> &'static Square {
         Self::SQUARES[rank * 8 + file]
+    }
+
+    pub fn mirror(&self) -> &'static Square {
+        return Self::SQUARES[(self.idx ^ MAGIC_MIRROR) as usize];
     }
 }

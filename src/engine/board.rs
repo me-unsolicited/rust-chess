@@ -79,13 +79,29 @@ impl Board {
 
     pub fn gen_moves(&self) -> Vec<Move> {
 
+        // always generate moves from the perspective of the white pieces
+        let mirror;
+        let position = if self.turn == Color::BLACK {
+            mirror = self.mirror();
+            &mirror
+        } else {
+            self
+        };
+
         let mut moves = Vec::new();
-        moves.append(&mut self.gen_pawn_moves());
-        moves.append(&mut self.gen_knight_moves());
-        moves.append(&mut self.gen_bishop_moves());
-        moves.append(&mut self.gen_rook_moves());
-        moves.append(&mut self.gen_queen_moves());
-        moves.append(&mut self.gen_king_moves());
+        moves.append(&mut position.gen_pawn_moves());
+        moves.append(&mut position.gen_knight_moves());
+        moves.append(&mut position.gen_bishop_moves());
+        moves.append(&mut position.gen_rook_moves());
+        moves.append(&mut position.gen_queen_moves());
+        moves.append(&mut position.gen_king_moves());
+
+        // mirror the moves back to black perspective if necessary
+        if self.turn == Color::BLACK {
+            for mov in moves.iter_mut() {
+                *mov = mov.mirror();
+            }
+        }
 
         moves
     }
@@ -434,6 +450,38 @@ impl Board {
             en_passant_target,
             halfmove_clock: 0,
             fullmove_number: 0,
+        }
+    }
+
+    pub fn mirror(&self) -> Board {
+
+        // symmetrically swap white/black positions
+        Board {
+            placement: Placement {
+                pawns: self.placement.pawns.swap_bytes(),
+                knights: self.placement.knights.swap_bytes(),
+                bishops: self.placement.bishops.swap_bytes(),
+                rooks: self.placement.rooks.swap_bytes(),
+                queens: self.placement.queens.swap_bytes(),
+                kings: self.placement.kings.swap_bytes(),
+
+                // white -> black, black -> white
+                white: self.placement.black.swap_bytes(),
+                black: self.placement.white.swap_bytes(),
+            },
+            turn: self.turn.other(),
+            castle_rights: CastleRights {
+                kingside_w: self.castle_rights.kingside_b,
+                queenside_w: self.castle_rights.queenside_b,
+                kingside_b: self.castle_rights.kingside_w,
+                queenside_b: self.castle_rights.queenside_w,
+            },
+            en_passant_target: match self.en_passant_target {
+                Some(square) => Some(square.mirror()),
+                None => None,
+            },
+            halfmove_clock: self.halfmove_clock,
+            fullmove_number: self.halfmove_clock,
         }
     }
 }

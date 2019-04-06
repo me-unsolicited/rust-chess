@@ -96,7 +96,7 @@ impl Board {
         moves.append(&mut position.gen_bishop_moves(check_restriction));
         moves.append(&mut position.gen_rook_moves(check_restriction));
         moves.append(&mut position.gen_queen_moves(check_restriction));
-        moves.append(&mut position.gen_king_moves(check_restriction));
+        moves.append(&mut position.gen_king_moves());
 
         // mirror the moves back to black perspective if necessary
         if self.turn == Color::BLACK {
@@ -375,26 +375,23 @@ impl Board {
         moves
     }
 
-    pub fn gen_king_moves(&self, check_restriction: u64) -> Vec<Move> {
+    pub fn gen_king_moves(&self) -> Vec<Move> {
         let mut moves = Vec::new();
 
         let kings = self.placement.white & self.placement.kings;
         for sq in BitIterator::from(kings) {
-            moves.append(&mut self.gen_king_moves_from(sq, check_restriction));
+            moves.append(&mut self.gen_king_moves_from(sq));
         }
 
         moves
     }
 
-    pub fn gen_king_moves_from(&self, sq: i32, check_restriction: u64) -> Vec<Move> {
+    pub fn gen_king_moves_from(&self, sq: i32) -> Vec<Move> {
         let mut moves = Vec::new();
         let from = Square::SQUARES[sq as usize];
 
         let targets = bb::KING_MOVES[sq as usize];
         for to_sq in BitIterator::from(targets) {
-            if bb::has_bit(check_restriction, to_sq) {
-                continue;
-            }
 
             let blockers = self.placement.white;
             let captures = self.placement.black;

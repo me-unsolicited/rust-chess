@@ -109,7 +109,6 @@ impl Board {
     }
 
     fn get_check_restriction(&self) -> u64 {
-
         let king = self.placement.white & self.placement.kings;
         let king_sq = bb::to_sq(king);
 
@@ -130,7 +129,7 @@ impl Board {
         // is the king in check along a diagonal?
         let blockers = self.placement.white | self.placement.black;
         let diag_bits = bb::BISHOP_MOVES[king_sq as usize];
-        let diag_attackers = diag_bits & self.placement.black & self.placement.bishops & self.placement.queens;
+        let diag_attackers = diag_bits & self.placement.black & (self.placement.bishops | self.placement.queens);
 
         for sq in BitIterator::from(diag_attackers) {
             let (is_check, walk) = bb::walk_towards(king_sq, sq, blockers);
@@ -141,7 +140,7 @@ impl Board {
 
         // is the king in check along a rank/file?
         let line_bits = bb::ROOK_MOVES[king_sq as usize];
-        let line_attackers = line_bits & self.placement.black & self.placement.rooks & self.placement.queens;
+        let line_attackers = line_bits & self.placement.black & (self.placement.rooks | self.placement.queens);
 
         for sq in BitIterator::from(line_attackers) {
             let (is_check, walk) = bb::walk_towards(king_sq, sq, blockers);

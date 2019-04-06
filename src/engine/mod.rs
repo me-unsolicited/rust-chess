@@ -67,15 +67,25 @@ impl Engine {
     }
 
     pub fn reset(&mut self) {
-        self.set_start_pos();
+        self.set_start_pos(Vec::new());
     }
 
-    pub fn set_start_pos(&mut self) {
-        self.state.lock().unwrap().position = Board::start_pos();
+    pub fn set_start_pos(&mut self, moves: Vec<Move>) {
+        let mut position = Board::start_pos();
+        for mov in moves {
+            position = position.update(mov);
+        }
+
+        self.state.lock().unwrap().position = position;
     }
 
-    pub fn set_position(&mut self, fen: &str) {
-        self.state.lock().unwrap().position = Board::new(fen);
+    pub fn set_position(&mut self, fen: &str, moves: Vec<Move>) {
+        let mut position = Board::new(fen);
+        for mov in moves {
+            position = position.update(mov);
+        }
+
+        self.state.lock().unwrap().position = position;
     }
 
     pub fn go(&mut self, p: GoParams) {

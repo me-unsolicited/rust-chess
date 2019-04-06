@@ -58,13 +58,24 @@ impl Uci {
 
     fn position(&mut self, args: Vec<&str>) {
 
+        let moves_index = args.iter().position(|arg| *arg == "moves");
+        let moves_index = moves_index.unwrap_or(args.len());
+
         // join "args" back into a FEN string
-        let fen = args.join(" ");
+        let fen = args[0..moves_index].join(" ");
+
+        // parse the moves, if any
+        let mut moves = Vec::new();
+        for i in (moves_index + 1)..args.len() {
+            let arg = args.get(i).unwrap();
+            let mov = Move::parse(arg).expect(&format!("unable to parse move {}", arg)[..]);
+            moves.push(mov);
+        }
 
         if fen == "startpos" {
-            self.engine.set_start_pos();
+            self.engine.set_start_pos(moves);
         } else {
-            self.engine.set_position(&fen);
+            self.engine.set_position(&fen, moves);
         }
     }
 

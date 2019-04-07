@@ -1,7 +1,7 @@
 use crate::engine::bb;
 use crate::engine::bb::BitIterator;
 use crate::engine::board::{Board, Color, Placement};
-use crate::engine::mov::{Move, QUEENSIDE_CASTLE_W, KINGSIDE_CASTLE_W};
+use crate::engine::mov::{KINGSIDE_CASTLE_W, Move, QUEENSIDE_CASTLE_W};
 use crate::engine::square::Square;
 
 pub fn gen_moves(board: &Board) -> Vec<Move> {
@@ -360,44 +360,48 @@ fn gen_castling_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
     }
 
     let rights = board.castle_rights;
-    let blockers = board.placement.white & board.placement.black;
+    let blockers = board.placement.white | board.placement.black;
 
     if rights.queenside_w {
         // verify that king is not in check along castling path
-        let (_, walk) = bb::walk_towards((QUEENSIDE_CASTLE_W.0).0.idx as i32, (QUEENSIDE_CASTLE_W.0).1.idx as i32, blockers);
-        let mut can_castle = true;
-        for sq in BitIterator::from(walk) {
-            if !0 != get_check_restriction_at(&board.placement, sq) {
-                can_castle = false;
-                break;
+        let (mut can_castle, walk) = bb::walk_towards((QUEENSIDE_CASTLE_W.0).0.idx as i32, (QUEENSIDE_CASTLE_W.0).1.idx as i32, blockers);
+
+        if can_castle {
+            for sq in BitIterator::from(walk) {
+                if !0 != get_check_restriction_at(&board.placement, sq) {
+                    can_castle = false;
+                    break;
+                }
             }
         }
 
         if can_castle {
-            moves.push(Move{
+            moves.push(Move {
                 from: (QUEENSIDE_CASTLE_W.0).0,
                 to: (QUEENSIDE_CASTLE_W.0).1,
-                promotion: None
+                promotion: None,
             })
         }
     }
 
     if rights.kingside_b {
         // verify that king is not in check along castling path
-        let (_, walk) = bb::walk_towards((KINGSIDE_CASTLE_W.0).0.idx as i32, (KINGSIDE_CASTLE_W.0).1.idx as i32, blockers);
-        let mut can_castle = true;
-        for sq in BitIterator::from(walk) {
-            if !0 != get_check_restriction_at(&board.placement, sq) {
-                can_castle = false;
-                break;
+        let (mut can_castle, walk) = bb::walk_towards((KINGSIDE_CASTLE_W.0).0.idx as i32, (KINGSIDE_CASTLE_W.0).1.idx as i32, blockers);
+
+        if can_castle {
+            for sq in BitIterator::from(walk) {
+                if !0 != get_check_restriction_at(&board.placement, sq) {
+                    can_castle = false;
+                    break;
+                }
             }
         }
 
         if can_castle {
-            moves.push(Move{
+            moves.push(Move {
                 from: (KINGSIDE_CASTLE_W.0).0,
                 to: (KINGSIDE_CASTLE_W.0).1,
-                promotion: None
+                promotion: None,
             })
         }
     }

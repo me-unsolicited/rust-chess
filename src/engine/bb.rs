@@ -188,7 +188,7 @@ pub fn to_rank_file(sq: i32) -> (i32, i32) {
     (sq / 8, sq % 8)
 }
 
-fn to_bit(rank: i32, file: i32) -> u64 {
+pub fn to_bit(rank: i32, file: i32) -> u64 {
     if rank < 0 || rank > 7 || file < 0 || file > 7 {
         return NO_MOVE;
     }

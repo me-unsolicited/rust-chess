@@ -10,6 +10,7 @@ use crate::engine::mov::Move;
 pub mod mov;
 mod bb;
 mod board;
+mod gen;
 mod piece;
 mod square;
 
@@ -106,7 +107,7 @@ impl Engine {
             position = position.update(mov);
         }
 
-        let moves = position.gen_moves();
+        let moves = gen::gen_moves(&position);
 
         // galaxy brain search algorithm: pick a random move
         let index = rand::thread_rng().gen_range(0, moves.len());

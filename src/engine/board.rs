@@ -1,7 +1,6 @@
 use std::u64;
 
 use crate::engine::bb;
-use crate::engine::bb::BitIterator;
 use crate::engine::mov::Move;
 use crate::engine::piece::PieceType;
 use crate::engine::square::Square;
@@ -10,37 +9,37 @@ const START_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 
 
 #[derive(Copy, Clone)]
 pub struct Board {
-    placement: Placement,
-    turn: Color,
-    castle_rights: CastleRights,
-    en_passant_target: Option<&'static Square>,
-    halfmove_clock: u16,
-    fullmove_number: u16,
+    pub placement: Placement,
+    pub turn: Color,
+    pub castle_rights: CastleRights,
+    pub en_passant_target: Option<&'static Square>,
+    pub halfmove_clock: u16,
+    pub fullmove_number: u16,
 }
 
 #[derive(Copy, Clone)]
-struct Placement {
-    pawns: u64,
-    knights: u64,
-    bishops: u64,
-    rooks: u64,
-    queens: u64,
-    kings: u64,
+pub struct Placement {
+    pub pawns: u64,
+    pub knights: u64,
+    pub bishops: u64,
+    pub rooks: u64,
+    pub queens: u64,
+    pub kings: u64,
 
-    white: u64,
-    black: u64,
+    pub white: u64,
+    pub black: u64,
 }
 
 #[derive(Copy, Clone)]
-struct CastleRights {
-    kingside_w: bool,
-    queenside_w: bool,
-    kingside_b: bool,
-    queenside_b: bool,
+pub struct CastleRights {
+    pub kingside_w: bool,
+    pub queenside_w: bool,
+    pub kingside_b: bool,
+    pub queenside_b: bool,
 }
 
 #[derive(PartialEq, Copy, Clone)]
-enum Color {
+pub enum Color {
     WHITE = 0xffffff,
     BLACK = 0x000000,
 }
@@ -76,304 +75,6 @@ impl Board {
     }
 
     pub fn start_pos() -> Board { Board::new(START_FEN) }
-
-    pub fn gen_moves(&self) -> Vec<Move> {
-
-        // always generate moves from the perspective of the white pieces
-        let mirror;
-        let position = if self.turn == Color::BLACK {
-            mirror = self.mirror();
-            &mirror
-        } else {
-            self
-        };
-
-        let check_restriction = position.get_check_restriction();
-
-        let mut moves = Vec::new();
-        moves.append(&mut position.gen_pawn_moves(check_restriction));
-        moves.append(&mut position.gen_knight_moves(check_restriction));
-        moves.append(&mut position.gen_bishop_moves(check_restriction));
-        moves.append(&mut position.gen_rook_moves(check_restriction));
-        moves.append(&mut position.gen_queen_moves(check_restriction));
-        moves.append(&mut position.gen_king_moves());
-
-        // mirror the moves back to black perspective if necessary
-        if self.turn == Color::BLACK {
-            for mov in moves.iter_mut() {
-                *mov = mov.mirror();
-            }
-        }
-
-        moves
-    }
-
-    fn get_check_restriction(&self) -> u64 {
-        let king = self.placement.white & self.placement.kings;
-        let king_sq = bb::to_sq(king);
-
-        // is a pawn checking the king?
-        let pawn_bits = bb::PAWN_ATTACKS[bb::mirror_sq(king_sq) as usize].swap_bytes();
-        let pawn_attackers = pawn_bits & self.placement.black & self.placement.pawns;
-        if pawn_attackers != 0 {
-            return pawn_attackers;
-        }
-
-        // is a knight checking the king?
-        let jump_bits = bb::KNIGHT_MOVES[king_sq as usize];
-        let jump_attackers = jump_bits & self.placement.black & self.placement.knights;
-        if jump_attackers != 0 {
-            return jump_attackers;
-        }
-
-        // is the king in check along a diagonal?
-        let blockers = self.placement.white | self.placement.black;
-        let diag_bits = bb::BISHOP_MOVES[king_sq as usize];
-        let diag_attackers = diag_bits & self.placement.black & (self.placement.bishops | self.placement.queens);
-
-        for sq in BitIterator::from(diag_attackers) {
-            let (is_check, walk) = bb::walk_towards(king_sq, sq, blockers);
-            if is_check {
-                return walk;
-            }
-        }
-
-        // is the king in check along a rank/file?
-        let line_bits = bb::ROOK_MOVES[king_sq as usize];
-        let line_attackers = line_bits & self.placement.black & (self.placement.rooks | self.placement.queens);
-
-        for sq in BitIterator::from(line_attackers) {
-            let (is_check, walk) = bb::walk_towards(king_sq, sq, blockers);
-            if is_check {
-                return walk;
-            }
-        }
-
-        // king is not in check; there is no restriction
-        !0
-    }
-
-    pub fn gen_pawn_moves(&self, check_restriction: u64) -> Vec<Move> {
-        let mut moves = Vec::new();
-
-        let pawns = self.placement.white & self.placement.pawns;
-        for sq in BitIterator::from(pawns) {
-            moves.append(&mut self.gen_pawn_moves_from(sq, check_restriction));
-        }
-
-        moves
-    }
-
-    pub fn gen_pawn_moves_from(&self, sq: i32, check_restriction: u64) -> Vec<Move> {
-        let mut moves = Vec::new();
-        let from = Square::SQUARES[sq as usize];
-
-        // non-attacking moves
-        let targets = bb::PAWN_MOVES[sq as usize] & check_restriction & !(self.placement.white | self.placement.black);
-        for to_sq in BitIterator::from(targets) {
-            let mov = Move {
-                from,
-                to: Square::SQUARES[to_sq as usize],
-                promotion: None,
-            };
-
-            let (rank, _) = bb::to_rank_file(to_sq);
-            if rank < 7 {
-                moves.push(mov);
-            } else {
-                moves.append(&mut mov.enumerate_promotions());
-            }
-        }
-
-        // attacks
-        let targets = bb::PAWN_ATTACKS[sq as usize] & check_restriction;
-        for to_sq in BitIterator::from(targets) {
-            let ep_capture = if self.en_passant_target.is_some() {
-                1 << self.en_passant_target.unwrap().idx
-            } else {
-                0
-            };
-
-            let captures = self.placement.black | ep_capture;
-            if 0 == captures & (1 << to_sq) {
-                continue;
-            }
-
-            let mov = Move {
-                from,
-                to: Square::SQUARES[to_sq as usize],
-                promotion: None,
-            };
-
-            let (rank, _) = bb::to_rank_file(to_sq);
-            if rank < 7 {
-                moves.push(mov);
-            } else {
-                moves.append(&mut mov.enumerate_promotions());
-            }
-        }
-
-        moves
-    }
-
-    pub fn gen_knight_moves(&self, check_restriction: u64) -> Vec<Move> {
-        let mut moves = Vec::new();
-
-        let knights = self.placement.white & self.placement.knights;
-        for sq in BitIterator::from(knights) {
-            moves.append(&mut self.gen_knight_moves_from(sq, check_restriction));
-        }
-
-        moves
-    }
-
-    pub fn gen_knight_moves_from(&self, sq: i32, check_restriction: u64) -> Vec<Move> {
-        let mut moves = Vec::new();
-        let from = Square::SQUARES[sq as usize];
-
-        let targets = bb::KNIGHT_MOVES[sq as usize] & check_restriction & !self.placement.white;
-        for to_sq in BitIterator::from(targets) {
-            moves.push(Move {
-                from,
-                to: Square::SQUARES[to_sq as usize],
-                promotion: None,
-            });
-        }
-
-        moves
-    }
-
-    pub fn gen_bishop_moves(&self, check_restriction: u64) -> Vec<Move> {
-        let mut moves = Vec::new();
-
-        let bishops = self.placement.white & self.placement.bishops;
-        for sq in BitIterator::from(bishops) {
-            moves.append(&mut self.gen_bishop_moves_from(sq, check_restriction));
-        }
-
-        moves
-    }
-
-    pub fn gen_bishop_moves_from(&self, sq: i32, check_restriction: u64) -> Vec<Move> {
-        let mut moves = Vec::new();
-        let from = Square::SQUARES[sq as usize];
-
-        let targets = bb::BISHOP_MOVES[sq as usize] & check_restriction;
-        for to_sq in BitIterator::from(targets) {
-            let blockers = self.placement.white;
-            let captures = self.placement.black;
-            if bb::is_blocked(sq, to_sq, blockers, captures) {
-                continue;
-            }
-
-            moves.push(Move {
-                from,
-                to: Square::SQUARES[to_sq as usize],
-                promotion: None,
-            });
-        }
-
-        moves
-    }
-
-    pub fn gen_rook_moves(&self, check_restriction: u64) -> Vec<Move> {
-        let mut moves = Vec::new();
-
-        let rooks = self.placement.white & self.placement.rooks;
-        for sq in BitIterator::from(rooks) {
-            moves.append(&mut self.gen_rook_moves_from(sq, check_restriction));
-        }
-
-        moves
-    }
-
-    pub fn gen_rook_moves_from(&self, sq: i32, check_restriction: u64) -> Vec<Move> {
-        let mut moves = Vec::new();
-        let from = Square::SQUARES[sq as usize];
-
-        let targets = bb::ROOK_MOVES[sq as usize] & check_restriction;
-        for to_sq in BitIterator::from(targets) {
-            let blockers = self.placement.white;
-            let captures = self.placement.black;
-            if bb::is_blocked(sq, to_sq, blockers, captures) {
-                continue;
-            }
-
-            moves.push(Move {
-                from,
-                to: Square::SQUARES[to_sq as usize],
-                promotion: None,
-            });
-        }
-
-        moves
-    }
-
-    pub fn gen_queen_moves(&self, check_restriction: u64) -> Vec<Move> {
-        let mut moves = Vec::new();
-
-        let queens = self.placement.white & self.placement.queens;
-        for sq in BitIterator::from(queens) {
-            moves.append(&mut self.gen_queen_moves_from(sq, check_restriction));
-        }
-
-        moves
-    }
-
-    pub fn gen_queen_moves_from(&self, sq: i32, check_restriction: u64) -> Vec<Move> {
-        let mut moves = Vec::new();
-        let from = Square::SQUARES[sq as usize];
-
-        let targets = bb::QUEEN_MOVES[sq as usize] & check_restriction;
-        for to_sq in BitIterator::from(targets) {
-            let blockers = self.placement.white;
-            let captures = self.placement.black;
-            if bb::is_blocked(sq, to_sq, blockers, captures) {
-                continue;
-            }
-
-            moves.push(Move {
-                from,
-                to: Square::SQUARES[to_sq as usize],
-                promotion: None,
-            });
-        }
-
-        moves
-    }
-
-    pub fn gen_king_moves(&self) -> Vec<Move> {
-        let mut moves = Vec::new();
-
-        let kings = self.placement.white & self.placement.kings;
-        for sq in BitIterator::from(kings) {
-            moves.append(&mut self.gen_king_moves_from(sq));
-        }
-
-        moves
-    }
-
-    pub fn gen_king_moves_from(&self, sq: i32) -> Vec<Move> {
-        let mut moves = Vec::new();
-        let from = Square::SQUARES[sq as usize];
-
-        let targets = bb::KING_MOVES[sq as usize];
-        for to_sq in BitIterator::from(targets) {
-            let blockers = self.placement.white;
-            let captures = self.placement.black;
-            if bb::is_blocked(sq, to_sq, blockers, captures) {
-                continue;
-            }
-
-            moves.push(Move {
-                from,
-                to: Square::SQUARES[to_sq as usize],
-                promotion: None,
-            });
-        }
-
-        moves
-    }
 
     pub fn update(&self, mov: Move) -> Self {
         let from_sq = mov.from.idx as i32;

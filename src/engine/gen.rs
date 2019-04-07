@@ -101,8 +101,13 @@ pub fn gen_pawn_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Ve
     let from = Square::SQUARES[sq as usize];
 
     // non-attacking moves
-    let targets = bb::PAWN_MOVES[sq as usize] & check_restriction & !(board.placement.white | board.placement.black);
+    let blockers = board.placement.white | board.placement.black;
+    let targets = bb::PAWN_MOVES[sq as usize] & check_restriction;
     for to_sq in BitIterator::from(targets) {
+        if bb::is_blocked(sq, to_sq, blockers, 0) {
+            continue;
+        }
+
         let mov = Move {
             from,
             to: Square::SQUARES[to_sq as usize],
@@ -300,7 +305,7 @@ pub fn gen_king_moves_from(board: &Board, sq: i32) -> Vec<Move> {
         // don't move into check
         if is_into_check(board, sq, to_sq) {
             println!("is_into_check: {}", Square::SQUARES[to_sq as usize].symbol);
-            continue
+            continue;
         }
 
         moves.push(Move {

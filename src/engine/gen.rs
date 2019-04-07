@@ -36,7 +36,7 @@ pub fn gen_moves(board: &Board) -> Vec<Move> {
     moves
 }
 
-fn get_check_restriction(board: &Board) -> u64 {
+pub fn get_check_restriction(board: &Board) -> u64 {
     let king = board.placement.white & board.placement.kings;
     let king_sq = bb::to_sq(king);
 

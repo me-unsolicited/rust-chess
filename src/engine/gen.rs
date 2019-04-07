@@ -85,7 +85,7 @@ fn get_check_restriction_at(placement: &Placement, king_sq: i32) -> u64 {
     !0
 }
 
-pub fn gen_pawn_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
+fn gen_pawn_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
     let mut moves = Vec::new();
 
     let pawns = board.placement.white & board.placement.pawns;
@@ -96,7 +96,7 @@ pub fn gen_pawn_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
     moves
 }
 
-pub fn gen_pawn_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Vec<Move> {
+fn gen_pawn_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Vec<Move> {
     let mut moves = Vec::new();
     let from = Square::SQUARES[sq as usize];
 
@@ -153,7 +153,7 @@ pub fn gen_pawn_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Ve
     moves
 }
 
-pub fn gen_knight_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
+fn gen_knight_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
     let mut moves = Vec::new();
 
     let knights = board.placement.white & board.placement.knights;
@@ -164,7 +164,7 @@ pub fn gen_knight_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
     moves
 }
 
-pub fn gen_knight_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Vec<Move> {
+fn gen_knight_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Vec<Move> {
     let mut moves = Vec::new();
     let from = Square::SQUARES[sq as usize];
 
@@ -180,7 +180,7 @@ pub fn gen_knight_moves_from(board: &Board, sq: i32, check_restriction: u64) -> 
     moves
 }
 
-pub fn gen_bishop_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
+fn gen_bishop_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
     let mut moves = Vec::new();
 
     let bishops = board.placement.white & board.placement.bishops;
@@ -191,7 +191,7 @@ pub fn gen_bishop_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
     moves
 }
 
-pub fn gen_bishop_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Vec<Move> {
+fn gen_bishop_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Vec<Move> {
     let mut moves = Vec::new();
     let from = Square::SQUARES[sq as usize];
 
@@ -213,7 +213,7 @@ pub fn gen_bishop_moves_from(board: &Board, sq: i32, check_restriction: u64) -> 
     moves
 }
 
-pub fn gen_rook_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
+fn gen_rook_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
     let mut moves = Vec::new();
 
     let rooks = board.placement.white & board.placement.rooks;
@@ -224,7 +224,7 @@ pub fn gen_rook_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
     moves
 }
 
-pub fn gen_rook_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Vec<Move> {
+fn gen_rook_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Vec<Move> {
     let mut moves = Vec::new();
     let from = Square::SQUARES[sq as usize];
 
@@ -246,7 +246,7 @@ pub fn gen_rook_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Ve
     moves
 }
 
-pub fn gen_queen_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
+fn gen_queen_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
     let mut moves = Vec::new();
 
     let queens = board.placement.white & board.placement.queens;
@@ -257,7 +257,7 @@ pub fn gen_queen_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
     moves
 }
 
-pub fn gen_queen_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Vec<Move> {
+fn gen_queen_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Vec<Move> {
     let mut moves = Vec::new();
     let from = Square::SQUARES[sq as usize];
 
@@ -279,7 +279,7 @@ pub fn gen_queen_moves_from(board: &Board, sq: i32, check_restriction: u64) -> V
     moves
 }
 
-pub fn gen_king_moves(board: &Board) -> Vec<Move> {
+fn gen_king_moves(board: &Board) -> Vec<Move> {
     let mut moves = Vec::new();
 
     let kings = board.placement.white & board.placement.kings;
@@ -290,7 +290,7 @@ pub fn gen_king_moves(board: &Board) -> Vec<Move> {
     moves
 }
 
-pub fn gen_king_moves_from(board: &Board, sq: i32) -> Vec<Move> {
+fn gen_king_moves_from(board: &Board, sq: i32) -> Vec<Move> {
     let mut moves = Vec::new();
     let from = Square::SQUARES[sq as usize];
 

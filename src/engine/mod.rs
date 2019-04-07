@@ -2,14 +2,13 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::thread::JoinHandle;
 
-use rand::prelude::*;
-
-use crate::engine::board::Board;
+use crate::engine::board::{Board, Color};
 use crate::engine::mov::Move;
 
 pub mod mov;
 mod bb;
 mod board;
+mod eval;
 mod gen;
 mod piece;
 mod square;
@@ -109,11 +108,19 @@ impl Engine {
 
         let moves = gen::gen_moves(&position);
 
-        // galaxy brain search algorithm: pick a random move
-        let index = rand::thread_rng().gen_range(0, moves.len());
-        let mov = moves.get(index);
+        // pick the best evaluated move
+        let sign = if position.turn == Color::WHITE { 1 } else { -1 };
+        let mut best_eval = std::i32::MIN;
+        let mut best_move = None;
+        for mov in moves.iter() {
+            let eval = sign * eval::evaluate(&position.update(*mov));
+            if eval > best_eval {
+                best_eval = eval;
+                best_move = Some(mov);
+            }
+        }
 
-        (state.lock().unwrap().callbacks.best_move_fn)(mov.unwrap());
+        (state.lock().unwrap().callbacks.best_move_fn)(best_move.expect("no move"));;
     }
 
     pub fn stop(&self) {

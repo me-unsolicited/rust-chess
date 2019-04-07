@@ -169,12 +169,8 @@ impl Board {
         let from = Square::SQUARES[sq as usize];
 
         // non-attacking moves
-        let targets = bb::PAWN_MOVES[sq as usize];
+        let targets = bb::PAWN_MOVES[sq as usize] & check_restriction;
         for to_sq in BitIterator::from(targets) {
-            if !bb::has_bit(check_restriction, to_sq) {
-                continue;
-            }
-
             let blockers = self.placement.white | self.placement.black;
             if bb::is_blocked(sq, to_sq, blockers) {
                 continue;
@@ -195,17 +191,14 @@ impl Board {
         }
 
         // attacks
-        let targets = bb::PAWN_ATTACKS[sq as usize];
+        let targets = bb::PAWN_ATTACKS[sq as usize] & check_restriction;
         for to_sq in BitIterator::from(targets) {
-            if !bb::has_bit(check_restriction, to_sq) {
-                continue;
-            }
-
             let ep_capture = if self.en_passant_target.is_some() {
                 1 << self.en_passant_target.unwrap().idx
             } else {
                 0
             };
+
             let captures = self.placement.black | ep_capture;
             if 0 == captures & (1 << to_sq) {
                 continue;
@@ -243,12 +236,8 @@ impl Board {
         let mut moves = Vec::new();
         let from = Square::SQUARES[sq as usize];
 
-        let targets = bb::KNIGHT_MOVES[sq as usize];
+        let targets = bb::KNIGHT_MOVES[sq as usize] & check_restriction;
         for to_sq in BitIterator::from(targets) {
-            if !bb::has_bit(check_restriction, to_sq) {
-                continue;
-            }
-
             let blocked = 0 != self.placement.white & (1 << to_sq);
             if blocked {
                 continue;
@@ -279,12 +268,8 @@ impl Board {
         let mut moves = Vec::new();
         let from = Square::SQUARES[sq as usize];
 
-        let targets = bb::BISHOP_MOVES[sq as usize];
+        let targets = bb::BISHOP_MOVES[sq as usize] & check_restriction;
         for to_sq in BitIterator::from(targets) {
-            if !bb::has_bit(check_restriction, to_sq) {
-                continue;
-            }
-
             let blockers = self.placement.white;
             let captures = self.placement.black;
             if bb::is_capture_blocked(sq, to_sq, blockers, captures) {
@@ -316,12 +301,8 @@ impl Board {
         let mut moves = Vec::new();
         let from = Square::SQUARES[sq as usize];
 
-        let targets = bb::ROOK_MOVES[sq as usize];
+        let targets = bb::ROOK_MOVES[sq as usize] & check_restriction;
         for to_sq in BitIterator::from(targets) {
-            if !bb::has_bit(check_restriction, to_sq) {
-                continue;
-            }
-
             let blockers = self.placement.white;
             let captures = self.placement.black;
             if bb::is_capture_blocked(sq, to_sq, blockers, captures) {
@@ -353,12 +334,8 @@ impl Board {
         let mut moves = Vec::new();
         let from = Square::SQUARES[sq as usize];
 
-        let targets = bb::QUEEN_MOVES[sq as usize];
+        let targets = bb::QUEEN_MOVES[sq as usize] & check_restriction;
         for to_sq in BitIterator::from(targets) {
-            if !bb::has_bit(check_restriction, to_sq) {
-                continue;
-            }
-
             let blockers = self.placement.white;
             let captures = self.placement.black;
             if bb::is_capture_blocked(sq, to_sq, blockers, captures) {
@@ -392,7 +369,6 @@ impl Board {
 
         let targets = bb::KING_MOVES[sq as usize];
         for to_sq in BitIterator::from(targets) {
-
             let blockers = self.placement.white;
             let captures = self.placement.black;
             if bb::is_capture_blocked(sq, to_sq, blockers, captures) {

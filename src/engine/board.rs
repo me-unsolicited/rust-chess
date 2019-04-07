@@ -467,13 +467,24 @@ impl Board {
             }
         }
 
-        // TODO set values correctly
-        bb::clear_bit(pawns, capture_sq);
-        bb::clear_bit(knights, capture_sq);
-        bb::clear_bit(bishops, capture_sq);
-        bb::clear_bit(rooks, capture_sq);
-        bb::clear_bit(kings, capture_sq);
-        bb::clear_bit(queens, capture_sq);
+        if *moving != PieceType::PAWN {
+            pawns = bb::clear_bit(pawns, capture_sq);
+        }
+        if *moving != PieceType::KNIGHT {
+            knights = bb::clear_bit(knights, capture_sq);
+        }
+        if *moving != PieceType::BISHOP {
+            bishops = bb::clear_bit(bishops, capture_sq);
+        }
+        if *moving != PieceType::ROOK {
+            rooks = bb::clear_bit(rooks, capture_sq);
+        }
+        if *moving != PieceType::QUEEN {
+            queens = bb::clear_bit(queens, capture_sq);
+        }
+        if *moving != PieceType::KING {
+            kings = bb::clear_bit(kings, capture_sq);
+        }
 
         let castling_rook = mov.get_castling_rook();
         if let Some(rook_move) = castling_rook {

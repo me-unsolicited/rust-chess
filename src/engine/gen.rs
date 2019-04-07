@@ -92,7 +92,7 @@ fn get_pin_restriction(board: &Board, sq: i32) -> u64 {
     let mut into_placement = board.placement;
 
     // clear square in new position, sans king
-    into_placement.pawns = bb::clear_bit(into_placement.kings, sq);
+    into_placement.pawns = bb::clear_bit(into_placement.pawns, sq);
     into_placement.knights = bb::clear_bit(into_placement.knights, sq);
     into_placement.bishops = bb::clear_bit(into_placement.bishops, sq);
     into_placement.rooks = bb::clear_bit(into_placement.rooks, sq);
@@ -101,7 +101,8 @@ fn get_pin_restriction(board: &Board, sq: i32) -> u64 {
     into_placement.black = bb::clear_bit(into_placement.black, sq);
 
     // see if the king is now in check
-    get_check_restriction_at(&into_placement, bb::to_sq(into_placement.kings))
+    let king = into_placement.white & into_placement.kings;
+    get_check_restriction_at(&into_placement, bb::to_sq(king))
 }
 
 fn gen_pawn_moves(board: &Board, check_restriction: u64) -> Vec<Move> {

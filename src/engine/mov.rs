@@ -1,5 +1,5 @@
-use crate::engine::square::*;
 use crate::engine::piece::*;
+use crate::engine::square::*;
 
 const PROMOTIONS: [PieceType; 4] = [
     PieceType::KNIGHT,
@@ -8,11 +8,16 @@ const PROMOTIONS: [PieceType; 4] = [
     PieceType::QUEEN,
 ];
 
-const CASTLES: [((&Square, &Square), (&Square, &Square)); 4] = [
-    ((&Square::E1, &Square::G1), (&Square::H1, &Square::F1)),
-    ((&Square::E1, &Square::C1), (&Square::A1, &Square::D1)),
-    ((&Square::E8, &Square::G8), (&Square::H8, &Square::F8)),
-    ((&Square::E8, &Square::C8), (&Square::A8, &Square::D8)),
+pub const QUEENSIDE_CASTLE_W: ((&Square, &Square), (&Square, &Square)) = ((&Square::E1, &Square::G1), (&Square::H1, &Square::F1));
+pub const KINGSIDE_CASTLE_W: ((&Square, &Square), (&Square, &Square)) = ((&Square::E1, &Square::C1), (&Square::A1, &Square::D1));
+pub const QUEENSIDE_CASTLE_B: ((&Square, &Square), (&Square, &Square)) = ((&Square::E8, &Square::G8), (&Square::H8, &Square::F8));
+pub const KINGSIDE_CASTLE_B: ((&Square, &Square), (&Square, &Square)) = ((&Square::E8, &Square::C8), (&Square::A8, &Square::D8));
+
+pub const CASTLES: [((&Square, &Square), (&Square, &Square)); 4] = [
+    QUEENSIDE_CASTLE_W,
+    KINGSIDE_CASTLE_W,
+    QUEENSIDE_CASTLE_B,
+    KINGSIDE_CASTLE_B,
 ];
 
 #[derive(Debug, Copy, Clone)]
@@ -64,12 +69,11 @@ impl Move {
         Move {
             from: self.from.mirror(),
             to: self.to.mirror(),
-            promotion: self.promotion
+            promotion: self.promotion,
         }
     }
 
     pub fn get_castling_rook(&self) -> Option<Move> {
-
         for castle in CASTLES.iter() {
             let king = castle.0;
             let rook = castle.1;
@@ -77,7 +81,7 @@ impl Move {
                 return Some(Move {
                     from: rook.0,
                     to: rook.1,
-                    promotion: None
+                    promotion: None,
                 });
             }
         }

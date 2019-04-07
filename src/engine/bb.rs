@@ -208,10 +208,6 @@ pub fn to_sq(bit: u64) -> i32 {
     bit.trailing_zeros() as i32
 }
 
-pub fn mirror_sq(sq: i32) -> i32 {
-    sq ^ 56
-}
-
 pub fn is_blocked(from: i32, to: i32, blockers: u64, captures: u64) -> bool {
     let (from_rank, from_file) = to_rank_file(from);
     let (to_rank, to_file) = to_rank_file(to);

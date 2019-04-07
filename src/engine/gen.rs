@@ -304,7 +304,6 @@ pub fn gen_king_moves_from(board: &Board, sq: i32) -> Vec<Move> {
 
         // don't move into check
         if is_into_check(board, sq, to_sq) {
-            println!("is_into_check: {}", Square::SQUARES[to_sq as usize].symbol);
             continue;
         }
 

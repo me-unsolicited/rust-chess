@@ -299,6 +299,7 @@ pub fn gen_king_moves_from(board: &Board, sq: i32) -> Vec<Move> {
 
         // don't move into check
         if is_into_check(board, sq, to_sq) {
+            println!("is_into_check: {}", Square::SQUARES[to_sq as usize].symbol);
             continue
         }
 
@@ -316,16 +317,22 @@ fn is_into_check(board: &Board, king_sq: i32, to_sq: i32) -> bool {
 
     // piece placements after the king is moved
     let mut into_placement = board.placement;
+
+    // clear current king position
     into_placement.kings = bb::clear_bit(into_placement.kings, king_sq);
-    into_placement.white = bb::clear_bit(into_placement.black, king_sq);
+    into_placement.white = bb::clear_bit(into_placement.white, king_sq);
+
+    // set new king position
     into_placement.kings = bb::set_bit(into_placement.kings, to_sq);
+    into_placement.white = bb::set_bit(into_placement.white, to_sq);
+
+    // clear pieces in case of capture
     into_placement.pawns = bb::clear_bit(into_placement.pawns, to_sq);
     into_placement.knights = bb::clear_bit(into_placement.knights, to_sq);
     into_placement.bishops = bb::clear_bit(into_placement.bishops, to_sq);
     into_placement.rooks = bb::clear_bit(into_placement.rooks, to_sq);
     into_placement.queens = bb::clear_bit(into_placement.queens, to_sq);
     into_placement.black = bb::clear_bit(into_placement.black, to_sq);
-    into_placement.white = bb::set_bit(into_placement.white, to_sq);
 
-    0 != get_check_restriction_at(&into_placement, to_sq)
+    0 != !get_check_restriction_at(&into_placement, to_sq)
 }

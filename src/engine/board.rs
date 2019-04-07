@@ -153,7 +153,12 @@ impl Board {
             _ => panic!("somehow setting down an unknown piece type"),
         }
 
-        let castling_rook = mov.get_castling_rook();
+        let castling_rook = if *moving == PieceType::KING {
+            mov.get_castling_rook()
+        } else {
+            None
+        };
+
         if let Some(rook_move) = castling_rook {
             rooks = bb::clear_bit(rooks, rook_move.from.idx as i32);
             rooks = bb::set_bit(rooks, rook_move.to.idx as i32);

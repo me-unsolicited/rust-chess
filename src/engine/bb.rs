@@ -212,31 +212,6 @@ pub fn mirror_sq(sq: i32) -> i32 {
     sq ^ 56
 }
 
-pub fn is_blocked(from: i32, to: i32, blockers: u64) -> bool {
-    let (from_rank, from_file) = to_rank_file(from);
-    let (to_rank, to_file) = to_rank_file(to);
-
-    let rank_dir = (to_rank - from_rank).signum();
-    let file_dir = (to_file - from_file).signum();
-
-    let mut blocked = false;
-    let mut reached_rank = rank_dir == 0;
-    let mut reached_file = file_dir == 0;
-
-    let mut rank = from_rank;
-    let mut file = from_file;
-
-    while !blocked && (!reached_rank || !reached_file) {
-        rank += rank_dir;
-        file += file_dir;
-        blocked = NO_MOVE != blockers & to_bit(rank, file);
-        reached_rank = reached_rank || rank == to_rank;
-        reached_file = reached_file || file == to_file;
-    }
-
-    blocked
-}
-
 pub fn is_capture_blocked(from: i32, to: i32, blockers: u64, captures: u64) -> bool {
     let (from_rank, from_file) = to_rank_file(from);
     let (to_rank, to_file) = to_rank_file(to);

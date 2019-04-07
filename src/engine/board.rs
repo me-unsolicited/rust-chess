@@ -169,13 +169,8 @@ impl Board {
         let from = Square::SQUARES[sq as usize];
 
         // non-attacking moves
-        let targets = bb::PAWN_MOVES[sq as usize] & check_restriction;
+        let targets = bb::PAWN_MOVES[sq as usize] & check_restriction & !(self.placement.white | self.placement.black);
         for to_sq in BitIterator::from(targets) {
-            let blockers = self.placement.white | self.placement.black;
-            if bb::is_blocked(sq, to_sq, blockers) {
-                continue;
-            }
-
             let mov = Move {
                 from,
                 to: Square::SQUARES[to_sq as usize],
@@ -236,13 +231,8 @@ impl Board {
         let mut moves = Vec::new();
         let from = Square::SQUARES[sq as usize];
 
-        let targets = bb::KNIGHT_MOVES[sq as usize] & check_restriction;
+        let targets = bb::KNIGHT_MOVES[sq as usize] & check_restriction & !self.placement.white;
         for to_sq in BitIterator::from(targets) {
-            let blocked = 0 != self.placement.white & (1 << to_sq);
-            if blocked {
-                continue;
-            }
-
             moves.push(Move {
                 from,
                 to: Square::SQUARES[to_sq as usize],

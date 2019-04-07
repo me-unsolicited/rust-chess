@@ -418,6 +418,12 @@ fn gen_castling_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
 
 fn is_into_check(board: &Board, king_sq: i32, to_sq: i32) -> bool {
 
+    // can't approach opposing king
+    let opposition = bb::KING_MOVES[to_sq as usize] & board.placement.black & board.placement.kings;
+    if 0 != opposition {
+        return true;
+    }
+
     // piece placements after the king is moved
     let mut into_placement = board.placement;
 

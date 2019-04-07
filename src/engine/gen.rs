@@ -372,7 +372,8 @@ fn gen_castling_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
 
         if can_castle {
             for sq in BitIterator::from(walk) {
-                if !0 != get_check_restriction_at(&board.placement, sq) {
+                let opposition = bb::KING_MOVES[sq as usize] & board.placement.black & board.placement.kings;
+                if 0 != opposition || !0 != get_check_restriction_at(&board.placement, sq) {
                     can_castle = false;
                     break;
                 }
@@ -397,7 +398,8 @@ fn gen_castling_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
 
         if can_castle {
             for sq in BitIterator::from(walk) {
-                if !0 != get_check_restriction_at(&board.placement, sq) {
+                let opposition = bb::KING_MOVES[sq as usize] & board.placement.black & board.placement.kings;
+                if 0 != opposition || !0 != get_check_restriction_at(&board.placement, sq) {
                     can_castle = false;
                     break;
                 }

@@ -467,12 +467,24 @@ impl Board {
             }
         }
 
+        // TODO set values correctly
         bb::clear_bit(pawns, capture_sq);
         bb::clear_bit(knights, capture_sq);
         bb::clear_bit(bishops, capture_sq);
         bb::clear_bit(rooks, capture_sq);
         bb::clear_bit(kings, capture_sq);
         bb::clear_bit(queens, capture_sq);
+
+        let castling_rook = mov.get_castling_rook();
+        if let Some(rook_move) = castling_rook {
+            rooks = bb::clear_bit(rooks, rook_move.from.idx as i32);
+            rooks = bb::set_bit(rooks, rook_move.to.idx as i32);
+        }
+
+        let mut kingside_w = self.castle_rights.kingside_w;
+        let mut queenside_w = self.castle_rights.queenside_w;
+        let mut kingside_b = self.castle_rights.kingside_b;
+        let mut queenside_b = self.castle_rights.queenside_b;
 
         let mut white = self.placement.white;
         let mut black = self.placement.black;
@@ -482,11 +494,31 @@ impl Board {
                 white = bb::clear_bit(white, from_sq);
                 white = bb::set_bit(white, to_sq);
                 black = bb::clear_bit(black, capture_sq);
+                let white_ref = &mut white;
+                if let Some(rook_move) = castling_rook {
+                    *white_ref = bb::clear_bit(*white_ref, rook_move.from.idx as i32);
+                    *white_ref = bb::set_bit(*white_ref, rook_move.to.idx as i32);
+                    if rook_move.from.idx == Square::A1.idx {
+                        queenside_w = false;
+                    } else {
+                        kingside_w = false;
+                    }
+                }
             }
             Color::BLACK => {
                 black = bb::clear_bit(black, from_sq);
                 black = bb::set_bit(black, to_sq);
                 white = bb::clear_bit(white, capture_sq);
+                let black_ref = &mut black;
+                if let Some(rook_move) = castling_rook {
+                    *black_ref = bb::clear_bit(*black_ref, rook_move.from.idx as i32);
+                    *black_ref = bb::set_bit(*black_ref, rook_move.to.idx as i32);
+                    if rook_move.from.idx == Square::A8.idx {
+                        queenside_b = false;
+                    } else {
+                        kingside_b = false;
+                    }
+                }
             }
         }
 
@@ -514,10 +546,10 @@ impl Board {
             },
             turn: self.turn.other(),
             castle_rights: CastleRights {
-                kingside_w: self.castle_rights.kingside_w,
-                queenside_w: self.castle_rights.queenside_w,
-                kingside_b: self.castle_rights.kingside_b,
-                queenside_b: self.castle_rights.queenside_b,
+                kingside_w,
+                queenside_w,
+                kingside_b,
+                queenside_b,
             },
             en_passant_target,
             halfmove_clock: 0,

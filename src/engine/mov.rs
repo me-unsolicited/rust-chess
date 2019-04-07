@@ -8,6 +8,13 @@ const PROMOTIONS: [PieceType; 4] = [
     PieceType::QUEEN,
 ];
 
+const CASTLES: [((&Square, &Square), (&Square, &Square)); 4] = [
+    ((&Square::E1, &Square::G1), (&Square::H1, &Square::F1)),
+    ((&Square::E1, &Square::C1), (&Square::A1, &Square::D1)),
+    ((&Square::E8, &Square::G8), (&Square::H8, &Square::F8)),
+    ((&Square::E8, &Square::C8), (&Square::A8, &Square::D8)),
+];
+
 #[derive(Debug, Copy, Clone)]
 pub struct Move {
     pub from: &'static Square,
@@ -59,5 +66,22 @@ impl Move {
             to: self.to.mirror(),
             promotion: self.promotion
         }
+    }
+
+    pub fn get_castling_rook(&self) -> Option<Move> {
+
+        for castle in CASTLES.iter() {
+            let king = castle.0;
+            let rook = castle.1;
+            if king.0.idx == self.from.idx && king.1.idx == self.to.idx {
+                return Some(Move {
+                    from: rook.0,
+                    to: rook.1,
+                    promotion: None
+                });
+            }
+        }
+
+        None
     }
 }

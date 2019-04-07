@@ -165,19 +165,19 @@ impl Board {
         let mut queenside_b = self.castle_rights.queenside_b;
 
         // clear castling rights according to square
-        if Square::E1.idx as i32 == from_sq {
+        if [from_sq, to_sq].contains(&(Square::E1.idx as i32)) {
             kingside_w = false;
             queenside_w = false;
-        } else if Square::A1.idx as i32 == from_sq {
+        } else if [from_sq, to_sq].contains(&(Square::A1.idx as i32)) {
             queenside_w = false;
-        } else if Square::H1.idx as i32 == from_sq {
+        } else if [from_sq, to_sq].contains(&(Square::H1.idx as i32)) {
             kingside_w = false;
-        } else if Square::E8.idx as i32 == from_sq {
+        } else if [from_sq, to_sq].contains(&(Square::E8.idx as i32)) {
             kingside_b = false;
             queenside_b = false;
-        } else if Square::A8.idx as i32 == from_sq {
+        } else if [from_sq, to_sq].contains(&(Square::A8.idx as i32)) {
             queenside_b = false;
-        } else if Square::H8.idx as i32 == from_sq {
+        } else if [from_sq, to_sq].contains(&(Square::H8.idx as i32)) {
             kingside_b = false;
         }
 

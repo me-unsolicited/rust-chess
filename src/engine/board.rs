@@ -447,16 +447,6 @@ impl Board {
             _ => moving,
         };
 
-        match *setting {
-            PieceType::PAWN => { pawns = bb::set_bit(pawns, to_sq); }
-            PieceType::KNIGHT => { knights = bb::set_bit(knights, to_sq); }
-            PieceType::BISHOP => { bishops = bb::set_bit(bishops, to_sq); }
-            PieceType::ROOK => { rooks = bb::set_bit(rooks, to_sq); }
-            PieceType::QUEEN => { queens = bb::set_bit(queens, to_sq); }
-            PieceType::KING => { kings = bb::set_bit(kings, to_sq); }
-            _ => panic!("somehow setting down an unknown piece type"),
-        }
-
         let mut capture_sq = to_sq;
         if *moving == PieceType::PAWN && self.en_passant_target.is_some() &&
             to_sq == self.en_passant_target.unwrap().idx as i32 {
@@ -484,6 +474,16 @@ impl Board {
         }
         if *moving != PieceType::KING {
             kings = bb::clear_bit(kings, capture_sq);
+        }
+
+        match *setting {
+            PieceType::PAWN => { pawns = bb::set_bit(pawns, to_sq); }
+            PieceType::KNIGHT => { knights = bb::set_bit(knights, to_sq); }
+            PieceType::BISHOP => { bishops = bb::set_bit(bishops, to_sq); }
+            PieceType::ROOK => { rooks = bb::set_bit(rooks, to_sq); }
+            PieceType::QUEEN => { queens = bb::set_bit(queens, to_sq); }
+            PieceType::KING => { kings = bb::set_bit(kings, to_sq); }
+            _ => panic!("somehow setting down an unknown piece type"),
         }
 
         let castling_rook = mov.get_castling_rook();

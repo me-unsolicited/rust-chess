@@ -45,7 +45,7 @@ fn get_check_restriction(board: &Board) -> u64 {
 fn get_check_restriction_at(placement: &Placement, king_sq: i32) -> u64 {
 
     // is a pawn checking the king?
-    let pawn_bits = bb::PAWN_ATTACKS[bb::mirror_sq(king_sq) as usize].swap_bytes();
+    let pawn_bits = bb::PAWN_ATTACKS[king_sq as usize];
     let pawn_attackers = pawn_bits & placement.black & placement.pawns;
     if pawn_attackers != 0 {
         return pawn_attackers;

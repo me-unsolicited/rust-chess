@@ -85,6 +85,24 @@ fn get_check_restriction_at(placement: &Placement, king_sq: i32) -> u64 {
     !0
 }
 
+fn get_pin_restriction(board: &Board, sq: i32) -> u64 {
+
+    // piece placements after the square is cleared
+    let mut into_placement = board.placement;
+
+    // clear square in new position, sans king
+    into_placement.pawns = bb::clear_bit(into_placement.kings, sq);
+    into_placement.knights = bb::clear_bit(into_placement.knights, sq);
+    into_placement.bishops = bb::clear_bit(into_placement.bishops, sq);
+    into_placement.rooks = bb::clear_bit(into_placement.rooks, sq);
+    into_placement.queens = bb::clear_bit(into_placement.queens, sq);
+    into_placement.white = bb::clear_bit(into_placement.white, sq);
+    into_placement.black = bb::clear_bit(into_placement.black, sq);
+
+    // see if the king is now in check
+    get_check_restriction_at(&into_placement, bb::to_sq(into_placement.kings))
+}
+
 fn gen_pawn_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
     let mut moves = Vec::new();
 
@@ -100,9 +118,12 @@ fn gen_pawn_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Vec<Mo
     let mut moves = Vec::new();
     let from = Square::SQUARES[sq as usize];
 
+    let pin_restriction = get_pin_restriction(board, sq);
+    let restriction = check_restriction & pin_restriction;
+
     // non-attacking moves
     let blockers = board.placement.white | board.placement.black;
-    let targets = bb::PAWN_MOVES[sq as usize] & check_restriction;
+    let targets = bb::PAWN_MOVES[sq as usize] & restriction;
     for to_sq in BitIterator::from(targets) {
         if bb::is_blocked(sq, to_sq, blockers, 0) {
             continue;
@@ -123,7 +144,7 @@ fn gen_pawn_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Vec<Mo
     }
 
     // attacks
-    let targets = bb::PAWN_ATTACKS[sq as usize] & check_restriction;
+    let targets = bb::PAWN_ATTACKS[sq as usize] & restriction;
     for to_sq in BitIterator::from(targets) {
         let ep_capture = if board.en_passant_target.is_some() {
             1 << board.en_passant_target.unwrap().idx
@@ -168,7 +189,10 @@ fn gen_knight_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Vec<
     let mut moves = Vec::new();
     let from = Square::SQUARES[sq as usize];
 
-    let targets = bb::KNIGHT_MOVES[sq as usize] & check_restriction & !board.placement.white;
+    let pin_restriction = get_pin_restriction(board, sq);
+    let restriction = check_restriction & pin_restriction;
+
+    let targets = bb::KNIGHT_MOVES[sq as usize] & restriction & !board.placement.white;
     for to_sq in BitIterator::from(targets) {
         moves.push(Move {
             from,
@@ -195,7 +219,10 @@ fn gen_bishop_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Vec<
     let mut moves = Vec::new();
     let from = Square::SQUARES[sq as usize];
 
-    let targets = bb::BISHOP_MOVES[sq as usize] & check_restriction;
+    let pin_restriction = get_pin_restriction(board, sq);
+    let restriction = check_restriction & pin_restriction;
+
+    let targets = bb::BISHOP_MOVES[sq as usize] & restriction;
     for to_sq in BitIterator::from(targets) {
         let blockers = board.placement.white;
         let captures = board.placement.black;
@@ -228,7 +255,10 @@ fn gen_rook_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Vec<Mo
     let mut moves = Vec::new();
     let from = Square::SQUARES[sq as usize];
 
-    let targets = bb::ROOK_MOVES[sq as usize] & check_restriction;
+    let pin_restriction = get_pin_restriction(board, sq);
+    let restriction = check_restriction & pin_restriction;
+
+    let targets = bb::ROOK_MOVES[sq as usize] & restriction;
     for to_sq in BitIterator::from(targets) {
         let blockers = board.placement.white;
         let captures = board.placement.black;
@@ -261,7 +291,10 @@ fn gen_queen_moves_from(board: &Board, sq: i32, check_restriction: u64) -> Vec<M
     let mut moves = Vec::new();
     let from = Square::SQUARES[sq as usize];
 
-    let targets = bb::QUEEN_MOVES[sq as usize] & check_restriction;
+    let pin_restriction = get_pin_restriction(board, sq);
+    let restriction = check_restriction & pin_restriction;
+
+    let targets = bb::QUEEN_MOVES[sq as usize] & restriction;
     for to_sq in BitIterator::from(targets) {
         let blockers = board.placement.white;
         let captures = board.placement.black;

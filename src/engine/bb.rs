@@ -22,10 +22,6 @@ fn init_pawn_moves() -> [u64; 64] {
 fn init_pawn_move(sq: i32) -> u64 {
     let (rank, file) = to_rank_file(sq);
 
-    if rank == 0 || rank == 7 {
-        return NO_MOVE;
-    }
-
     if rank == 1 {
         return to_bit(2, file) | to_bit(3, file);
     }
@@ -44,10 +40,6 @@ fn init_pawn_attacks() -> [u64; 64] {
 
 fn init_pawn_attack(sq: i32) -> u64 {
     let (rank, file) = to_rank_file(sq);
-
-    if rank == 0 || rank == 7 {
-        return NO_MOVE;
-    }
 
     let left = to_bit(rank + 1, file - 1);
     let right = to_bit(rank + 1, file + 1);

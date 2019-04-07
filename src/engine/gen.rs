@@ -365,6 +365,9 @@ fn gen_castling_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
     if rights.queenside_w {
         // verify that king is not in check along castling path
         let (mut can_castle, walk) = bb::walk_towards((QUEENSIDE_CASTLE_W.0).0.idx as i32, (QUEENSIDE_CASTLE_W.0).1.idx as i32, blockers);
+        let (rook_free, _) = bb::walk_towards((QUEENSIDE_CASTLE_W.1).0.idx as i32, (QUEENSIDE_CASTLE_W.1).1.idx as i32, blockers);
+
+        can_castle &= rook_free;
 
         if can_castle {
             for sq in BitIterator::from(walk) {
@@ -387,6 +390,9 @@ fn gen_castling_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
     if rights.kingside_b {
         // verify that king is not in check along castling path
         let (mut can_castle, walk) = bb::walk_towards((KINGSIDE_CASTLE_W.0).0.idx as i32, (KINGSIDE_CASTLE_W.0).1.idx as i32, blockers);
+        let (rook_free, _) = bb::walk_towards((KINGSIDE_CASTLE_W.1).0.idx as i32, (KINGSIDE_CASTLE_W.1).1.idx as i32, blockers);
+
+        can_castle &= rook_free;
 
         if can_castle {
             for sq in BitIterator::from(walk) {

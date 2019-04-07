@@ -387,7 +387,7 @@ fn gen_castling_moves(board: &Board, check_restriction: u64) -> Vec<Move> {
         }
     }
 
-    if rights.kingside_b {
+    if rights.kingside_w {
         // verify that king is not in check along castling path
         let (mut can_castle, walk) = bb::walk_towards((KINGSIDE_CASTLE_W.0).0.idx as i32, (KINGSIDE_CASTLE_W.0).1.idx as i32, blockers);
         let (rook_free, _) = bb::walk_towards((KINGSIDE_CASTLE_W.1).0.idx as i32, (KINGSIDE_CASTLE_W.1).1.idx as i32, blockers);

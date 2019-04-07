@@ -164,6 +164,23 @@ impl Board {
         let mut kingside_b = self.castle_rights.kingside_b;
         let mut queenside_b = self.castle_rights.queenside_b;
 
+        // clear castling rights according to square
+        if Square::E1.idx as i32 == from_sq {
+            kingside_w = false;
+            queenside_w = false;
+        } else if Square::A1.idx as i32 == from_sq {
+            queenside_w = false;
+        } else if Square::H1.idx as i32 == from_sq {
+            kingside_w = false;
+        } else if Square::E8.idx as i32 == from_sq {
+            kingside_b = false;
+            queenside_b = false;
+        } else if Square::A8.idx as i32 == from_sq {
+            queenside_b = false;
+        } else if Square::H8.idx as i32 == from_sq {
+            kingside_b = false;
+        }
+
         let mut white = self.placement.white;
         let mut black = self.placement.black;
 
@@ -176,11 +193,6 @@ impl Board {
                 if let Some(rook_move) = castling_rook {
                     *white_ref = bb::clear_bit(*white_ref, rook_move.from.idx as i32);
                     *white_ref = bb::set_bit(*white_ref, rook_move.to.idx as i32);
-                    if rook_move.from.idx == Square::A1.idx {
-                        queenside_w = false;
-                    } else {
-                        kingside_w = false;
-                    }
                 }
             }
             Color::BLACK => {
@@ -191,11 +203,6 @@ impl Board {
                 if let Some(rook_move) = castling_rook {
                     *black_ref = bb::clear_bit(*black_ref, rook_move.from.idx as i32);
                     *black_ref = bb::set_bit(*black_ref, rook_move.to.idx as i32);
-                    if rook_move.from.idx == Square::A8.idx {
-                        queenside_b = false;
-                    } else {
-                        kingside_b = false;
-                    }
                 }
             }
         }

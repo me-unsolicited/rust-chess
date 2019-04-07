@@ -1,7 +1,7 @@
-use crate::engine::board::{Board, Color};
-use crate::engine::mov::Move;
 use crate::engine::bb;
 use crate::engine::bb::BitIterator;
+use crate::engine::board::{Board, Color, Placement};
+use crate::engine::mov::Move;
 use crate::engine::square::Square;
 
 pub fn gen_moves(board: &Board) -> Vec<Move> {
@@ -15,7 +15,7 @@ pub fn gen_moves(board: &Board) -> Vec<Move> {
         board
     };
 
-    let check_restriction = get_check_restriction(board);
+    let check_restriction = get_check_restriction(position);
 
     let mut moves = Vec::new();
     moves.append(&mut gen_pawn_moves(position, check_restriction));
@@ -39,24 +39,29 @@ fn get_check_restriction(board: &Board) -> u64 {
     let king = board.placement.white & board.placement.kings;
     let king_sq = bb::to_sq(king);
 
+    get_check_restriction_at(&board.placement, king_sq)
+}
+
+fn get_check_restriction_at(placement: &Placement, king_sq: i32) -> u64 {
+
     // is a pawn checking the king?
     let pawn_bits = bb::PAWN_ATTACKS[bb::mirror_sq(king_sq) as usize].swap_bytes();
-    let pawn_attackers = pawn_bits & board.placement.black & board.placement.pawns;
+    let pawn_attackers = pawn_bits & placement.black & placement.pawns;
     if pawn_attackers != 0 {
         return pawn_attackers;
     }
 
     // is a knight checking the king?
     let jump_bits = bb::KNIGHT_MOVES[king_sq as usize];
-    let jump_attackers = jump_bits & board.placement.black & board.placement.knights;
+    let jump_attackers = jump_bits & placement.black & placement.knights;
     if jump_attackers != 0 {
         return jump_attackers;
     }
 
     // is the king in check along a diagonal?
-    let blockers = board.placement.white | board.placement.black;
+    let blockers = placement.white | placement.black;
     let diag_bits = bb::BISHOP_MOVES[king_sq as usize];
-    let diag_attackers = diag_bits & board.placement.black & (board.placement.bishops | board.placement.queens);
+    let diag_attackers = diag_bits & placement.black & (placement.bishops | placement.queens);
 
     for sq in BitIterator::from(diag_attackers) {
         let (is_check, walk) = bb::walk_towards(king_sq, sq, blockers);
@@ -67,7 +72,7 @@ fn get_check_restriction(board: &Board) -> u64 {
 
     // is the king in check along a rank/file?
     let line_bits = bb::ROOK_MOVES[king_sq as usize];
-    let line_attackers = line_bits & board.placement.black & (board.placement.rooks | board.placement.queens);
+    let line_attackers = line_bits & placement.black & (placement.rooks | placement.queens);
 
     for sq in BitIterator::from(line_attackers) {
         let (is_check, walk) = bb::walk_towards(king_sq, sq, blockers);
@@ -292,6 +297,11 @@ pub fn gen_king_moves_from(board: &Board, sq: i32) -> Vec<Move> {
             continue;
         }
 
+        // don't move into check
+        if is_into_check(board, sq, to_sq) {
+            continue
+        }
+
         moves.push(Move {
             from,
             to: Square::SQUARES[to_sq as usize],
@@ -300,4 +310,22 @@ pub fn gen_king_moves_from(board: &Board, sq: i32) -> Vec<Move> {
     }
 
     moves
+}
+
+fn is_into_check(board: &Board, king_sq: i32, to_sq: i32) -> bool {
+
+    // piece placements after the king is moved
+    let mut into_placement = board.placement;
+    into_placement.kings = bb::clear_bit(into_placement.kings, king_sq);
+    into_placement.white = bb::clear_bit(into_placement.black, king_sq);
+    into_placement.kings = bb::set_bit(into_placement.kings, to_sq);
+    into_placement.pawns = bb::clear_bit(into_placement.pawns, to_sq);
+    into_placement.knights = bb::clear_bit(into_placement.knights, to_sq);
+    into_placement.bishops = bb::clear_bit(into_placement.bishops, to_sq);
+    into_placement.rooks = bb::clear_bit(into_placement.rooks, to_sq);
+    into_placement.queens = bb::clear_bit(into_placement.queens, to_sq);
+    into_placement.black = bb::clear_bit(into_placement.black, to_sq);
+    into_placement.white = bb::set_bit(into_placement.white, to_sq);
+
+    0 != get_check_restriction_at(&into_placement, to_sq)
 }

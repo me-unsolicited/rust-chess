@@ -45,18 +45,22 @@ pub fn get_check_restriction(board: &Board) -> u64 {
 
 fn get_check_restriction_at(placement: &Placement, king_sq: i32) -> u64 {
 
+    // starting assumption is no restriction, i.e. king is not in check
+    // double check may result in 0, full restriction, i.e. the king must move
+    let mut check_restriction = !0;
+
     // is a pawn checking the king?
     let pawn_bits = bb::PAWN_ATTACKS[king_sq as usize];
     let pawn_attackers = pawn_bits & placement.black & placement.pawns;
     if pawn_attackers != 0 {
-        return pawn_attackers;
+        check_restriction &= pawn_attackers;
     }
 
     // is a knight checking the king?
     let jump_bits = bb::KNIGHT_MOVES[king_sq as usize];
     let jump_attackers = jump_bits & placement.black & placement.knights;
     if jump_attackers != 0 {
-        return jump_attackers;
+        check_restriction &= jump_attackers;
     }
 
     // is the king in check along a diagonal?
@@ -67,7 +71,7 @@ fn get_check_restriction_at(placement: &Placement, king_sq: i32) -> u64 {
     for sq in BitIterator::from(diag_attackers) {
         let (is_check, walk) = bb::walk_towards(king_sq, sq, blockers);
         if is_check {
-            return walk;
+            check_restriction &= walk;
         }
     }
 
@@ -78,12 +82,11 @@ fn get_check_restriction_at(placement: &Placement, king_sq: i32) -> u64 {
     for sq in BitIterator::from(line_attackers) {
         let (is_check, walk) = bb::walk_towards(king_sq, sq, blockers);
         if is_check {
-            return walk;
+            check_restriction &= walk;
         }
     }
 
-    // king is not in check; there is no restriction
-    !0
+    check_restriction
 }
 
 fn get_pin_restriction(board: &Board, sq: i32) -> u64 {

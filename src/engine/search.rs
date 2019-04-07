@@ -49,7 +49,7 @@ fn negamax(position: Board, depth: i32, sign: i32) -> (i32, Option<Move>) {
         let (eval, _) = negamax(moved, depth - 1, -sign);
         let eval = -eval;
 
-        if eval >= best_eval {
+        if eval > best_eval {
             best_eval = eval;
             best_move = Some(mov);
         }

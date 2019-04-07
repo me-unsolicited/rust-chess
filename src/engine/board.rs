@@ -262,7 +262,7 @@ impl Board {
         for to_sq in BitIterator::from(targets) {
             let blockers = self.placement.white;
             let captures = self.placement.black;
-            if bb::is_capture_blocked(sq, to_sq, blockers, captures) {
+            if bb::is_blocked(sq, to_sq, blockers, captures) {
                 continue;
             }
 
@@ -295,7 +295,7 @@ impl Board {
         for to_sq in BitIterator::from(targets) {
             let blockers = self.placement.white;
             let captures = self.placement.black;
-            if bb::is_capture_blocked(sq, to_sq, blockers, captures) {
+            if bb::is_blocked(sq, to_sq, blockers, captures) {
                 continue;
             }
 
@@ -328,7 +328,7 @@ impl Board {
         for to_sq in BitIterator::from(targets) {
             let blockers = self.placement.white;
             let captures = self.placement.black;
-            if bb::is_capture_blocked(sq, to_sq, blockers, captures) {
+            if bb::is_blocked(sq, to_sq, blockers, captures) {
                 continue;
             }
 
@@ -361,7 +361,7 @@ impl Board {
         for to_sq in BitIterator::from(targets) {
             let blockers = self.placement.white;
             let captures = self.placement.black;
-            if bb::is_capture_blocked(sq, to_sq, blockers, captures) {
+            if bb::is_blocked(sq, to_sq, blockers, captures) {
                 continue;
             }
 

@@ -105,7 +105,7 @@ impl Negamax {
         // no available moves? the game is over
         if moves.is_empty() {
             let perspective = if position.turn == Color::WHITE { position } else { position.mirror() };
-            let is_mate = 0 != gen::get_check_restriction(&perspective);
+            let is_mate = !0 != gen::get_check_restriction(&perspective);
             return (sign * if is_mate { MIN_EVAL } else { 0 }, None);
         }
 

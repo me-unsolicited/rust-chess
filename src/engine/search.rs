@@ -144,9 +144,7 @@ impl Searcher for NegamaxAb {
         let start = Instant::now();
 
         let sign = if position.turn == Color::WHITE { 1 } else { -1 };
-        let alpha = sign * MIN_EVAL;
-        let beta = sign * MAX_EVAL;
-        let (_, mov) = self.negamax(position, Self::DEPTH, alpha, beta, sign);
+        let (_, mov) = self.negamax(position, Self::DEPTH, MIN_EVAL, MAX_EVAL, sign);
 
         self.stats.time_elapsed = start.elapsed();
 

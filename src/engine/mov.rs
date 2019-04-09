@@ -88,4 +88,16 @@ impl Move {
 
         None
     }
+
+    pub fn uci(&self) -> String {
+        let mut repr = String::new();
+        repr.push_str(self.from.symbol);
+        repr.push_str(self.to.symbol);
+
+        if self.promotion.is_some() {
+            repr.push_str(self.promotion.unwrap().symbol);
+        }
+
+        repr
+    }
 }

@@ -235,16 +235,7 @@ mod uci_out {
     }
 
     pub fn bestmove(mov: &Move) {
-
-        let mut repr = String::new();
-        repr.push_str(mov.from.symbol);
-        repr.push_str(mov.to.symbol);
-
-        if mov.promotion.is_some() {
-            repr.push_str(mov.promotion.unwrap().symbol);
-        }
-
-        println!("bestmove {}", repr);
+        println!("bestmove {}", mov.uci());
     }
 
     pub fn info_string(msg: &str) {

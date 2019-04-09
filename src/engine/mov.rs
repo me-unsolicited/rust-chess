@@ -90,7 +90,7 @@ impl Move {
     }
 
     pub fn uci(&self) -> String {
-        let mut repr = String::new();
+        let mut repr = String::with_capacity(5);
         repr.push_str(self.from.symbol);
         repr.push_str(self.to.symbol);
 

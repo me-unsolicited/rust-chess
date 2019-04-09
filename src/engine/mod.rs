@@ -14,6 +14,7 @@ mod piece;
 mod search;
 mod square;
 
+#[allow(dead_code)]
 pub enum LogLevel {
     INFO,
     DEBUG,

@@ -1,6 +1,8 @@
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+use rand::prelude::*;
+
 use crate::engine::{EngineState, eval, gen, GoParams};
 use crate::engine::board::{Board, Color};
 use crate::engine::mov::Move;
@@ -137,10 +139,16 @@ impl Negamax {
 
 struct NegamaxAb {
     stats: SearchStats,
+    rng: rand::rngs::ThreadRng,
 }
 
 impl Searcher for NegamaxAb {
     fn search(&mut self, position: Board) -> Move {
+
+        // re-initialize thread local random
+        self.rng = rand::thread_rng();
+
+        // begin timing the search routine
         let start = Instant::now();
 
         let sign = if position.turn == Color::WHITE { 1 } else { -1 };
@@ -162,7 +170,8 @@ impl NegamaxAb {
     #[allow(dead_code)]
     pub fn new() -> Self {
         Self {
-            stats: SearchStats::new()
+            stats: SearchStats::new(),
+            rng: rand::thread_rng(),
         }
     }
 
@@ -177,7 +186,9 @@ impl NegamaxAb {
             return (sign * eval::evaluate(&position), None);
         }
 
-        let moves = gen::gen_moves(&position);
+        // generate legal moves, then shuffle to improve alpha-beta pruning
+        let mut moves = gen::gen_moves(&position);
+        moves.shuffle(&mut self.rng);
 
         // no available moves? the game is over
         if moves.is_empty() {

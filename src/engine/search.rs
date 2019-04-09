@@ -165,7 +165,7 @@ impl Searcher for NegamaxAb {
 }
 
 impl NegamaxAb {
-    const DEPTH: i32 = 7;
+    const DEPTH: i32 = 6;
 
     #[allow(dead_code)]
     pub fn new() -> Self {

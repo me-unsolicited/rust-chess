@@ -24,6 +24,7 @@ pub fn search(state: Arc<Mutex<EngineState>>, p: GoParams) {
     let mov = searcher.search(position);
 
     let stats = searcher.get_stats();
+    eprintln!("---- {}", mov.uci());
     eprintln!("nodes_visited: {}", stats.nodes_visited);
     eprintln!("time_elapsed (ms): {}", stats.time_elapsed.as_millis());
     eprintln!("max_depth: {}", stats.max_depth);

@@ -223,6 +223,12 @@ impl Board {
             }
         }
 
+        let fullmove_number = if self.turn == Color::WHITE {
+            self.fullmove_number
+        } else {
+            self.fullmove_number + 1
+        };
+
         Board {
             placement: Placement {
                 pawns,
@@ -243,7 +249,7 @@ impl Board {
             },
             en_passant_target,
             halfmove_clock: 0,
-            fullmove_number: 0,
+            fullmove_number,
         }
     }
 
@@ -275,7 +281,7 @@ impl Board {
                 None => None,
             },
             halfmove_clock: self.halfmove_clock,
-            fullmove_number: self.halfmove_clock,
+            fullmove_number: self.fullmove_number,
         }
     }
 }

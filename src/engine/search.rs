@@ -114,7 +114,7 @@ impl Negamax {
         if moves.is_empty() {
             let perspective = if position.turn == Color::WHITE { position } else { position.mirror() };
             let is_mate = !0 != gen::get_check_restriction(&perspective);
-            return (sign * if is_mate { MIN_EVAL } else { 0 }, None);
+            return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None);
         }
 
         // choose the best variation
@@ -194,7 +194,7 @@ impl NegamaxAb {
         if moves.is_empty() {
             let perspective = if position.turn == Color::WHITE { position } else { position.mirror() };
             let is_mate = !0 != gen::get_check_restriction(&perspective);
-            return (sign * if is_mate { MIN_EVAL } else { 0 }, None);
+            return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None);
         }
 
         // choose the best variation

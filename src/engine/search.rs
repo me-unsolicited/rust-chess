@@ -104,7 +104,12 @@ impl Negamax {
         self.stats.nodes_visited += 1;
         self.stats.max_depth = self.stats.max_depth.max(Self::DEPTH - depth);
 
-        // generate moves first to test for checkmate/stalemate
+        // have we reached max depth?
+        if depth <= 0 {
+            return (sign * eval::evaluate(&position), None, position);
+        }
+
+        // generate moves to test for checkmate/stalemate
         let moves = gen::gen_moves(&position);
 
         // no available moves? the game is over
@@ -130,11 +135,6 @@ impl Negamax {
         // three-fold repetition
         if is_three_fold(&position) {
             return (0, None, position);
-        }
-
-        // have we reached max depth?
-        if depth <= 0 {
-            return (sign * eval::evaluate(&position), None, position);
         }
 
         // choose the best variation
@@ -204,7 +204,12 @@ impl NegamaxAb {
         self.stats.nodes_visited += 1;
         self.stats.max_depth = self.stats.max_depth.max(Self::DEPTH - depth);
 
-        // generate moves first to test for checkmate/stalemate
+        // have we reached max depth?
+        if depth <= 0 {
+            return (sign * eval::evaluate(&position), None, position);
+        }
+
+        // generate moves to test for checkmate/stalemate
         let mut moves = gen::gen_moves(&position);
 
         // no available moves? the game is over
@@ -230,11 +235,6 @@ impl NegamaxAb {
         // three-fold repetition
         if is_three_fold(&position) {
             return (0, None, position);
-        }
-
-        // have we reached max depth?
-        if depth <= 0 {
-            return (sign * eval::evaluate(&position), None, position);
         }
 
         // shuffle to improve alpha-beta pruning

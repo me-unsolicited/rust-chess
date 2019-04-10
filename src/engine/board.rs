@@ -230,7 +230,7 @@ impl Board {
             }
         }
 
-        let is_reversible = !(*moving == PieceType::PAWN || bb::has_bit(self.placement.white | self.placement.black, capture_sq));
+        let is_reversible = !(castling_rook.is_some() || *moving == PieceType::PAWN || bb::has_bit(self.placement.white | self.placement.black, capture_sq));
         let halfmove_clock = if is_reversible {
             self.halfmove_clock + 1
         } else {

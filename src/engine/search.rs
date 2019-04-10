@@ -104,6 +104,16 @@ impl Negamax {
         self.stats.nodes_visited += 1;
         self.stats.max_depth = self.stats.max_depth.max(Self::DEPTH - depth);
 
+        // fifty-move rule
+        if position.halfmove_clock >= 50 {
+            return (0, None, position);
+        }
+
+        // three-fold repetition
+        if is_three_fold(&position) {
+            return (0, None, position);
+        }
+
         // have we reached max depth?
         if depth <= 0 {
             return (sign * eval::evaluate(&position), None, position);
@@ -125,16 +135,6 @@ impl Negamax {
 
             let is_mate = !0 != check_restriction;
             return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None, position);
-        }
-
-        // fifty-move rule
-        if position.halfmove_clock >= 50 {
-            return (0, None, position);
-        }
-
-        // three-fold repetition
-        if is_three_fold(&position) {
-            return (0, None, position);
         }
 
         // choose the best variation
@@ -204,6 +204,16 @@ impl NegamaxAb {
         self.stats.nodes_visited += 1;
         self.stats.max_depth = self.stats.max_depth.max(Self::DEPTH - depth);
 
+        // fifty-move rule
+        if position.halfmove_clock >= 50 {
+            return (0, None, position);
+        }
+
+        // three-fold repetition
+        if is_three_fold(&position) {
+            return (0, None, position);
+        }
+
         // have we reached max depth?
         if depth <= 0 {
             return (sign * eval::evaluate(&position), None, position);
@@ -225,16 +235,6 @@ impl NegamaxAb {
 
             let is_mate = !0 != check_restriction;
             return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None, position);
-        }
-
-        // fifty-move rule
-        if position.halfmove_clock >= 50 {
-            return (0, None, position);
-        }
-
-        // three-fold repetition
-        if is_three_fold(&position) {
-            return (0, None, position);
         }
 
         // shuffle to improve alpha-beta pruning

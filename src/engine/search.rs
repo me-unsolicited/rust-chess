@@ -15,7 +15,7 @@ const MAX_EVAL: i32 = -MIN_EVAL;
 fn new_searcher() -> impl Searcher { NegamaxAb::new() }
 
 pub fn search(state: Arc<Mutex<EngineState>>, p: GoParams) {
-    let root_position = state.lock().unwrap().position;
+    let root_position = state.lock().unwrap().position.clone();
 
     let mut position = root_position;
     for mov in p.search_moves {
@@ -103,18 +103,46 @@ impl Negamax {
         self.stats.nodes_visited += 1;
         self.stats.max_depth = self.stats.max_depth.max(Self::DEPTH - depth);
 
-        // have we reached max depth?
-        if depth <= 0 {
-            return (sign * eval::evaluate(&position), None);
-        }
-
+        // generate moves first to test for checkmate/stalemate
         let moves = gen::gen_moves(&position);
 
         // no available moves? the game is over
         if moves.is_empty() {
-            let perspective = if position.turn == Color::WHITE { position } else { position.mirror() };
-            let is_mate = !0 != gen::get_check_restriction(&perspective);
+
+            let position = if position.turn == Color::WHITE {
+                position
+            } else {
+                position.mirror()
+            };
+
+            let is_mate = !0 != gen::get_check_restriction(&position);
             return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None);
+        }
+
+        // fifty-move rule
+        if position.halfmove_clock >= 50 {
+            return (0, None);
+        }
+
+        // three-fold repetition
+        if position.halfmove_clock > 4 {
+            let hash = position.hash;
+            let hist = &position.history;
+            let limit = position.halfmove_clock.min(hist.len() as u16);
+
+            let mut n = 0;
+            for i in 0..limit {
+                let ply = hist.len() - i as usize - 1;
+                if hash == hist[ply] {
+                    n += 1;
+                    if n >= 2 { return (0, None); }
+                }
+            }
+        }
+
+        // have we reached max depth?
+        if depth <= 0 {
+            return (sign * eval::evaluate(&position), None);
         }
 
         // choose the best variation
@@ -181,21 +209,50 @@ impl NegamaxAb {
         self.stats.nodes_visited += 1;
         self.stats.max_depth = self.stats.max_depth.max(Self::DEPTH - depth);
 
+        // generate moves first to test for checkmate/stalemate
+        let mut moves = gen::gen_moves(&position);
+
+        // no available moves? the game is over
+        if moves.is_empty() {
+
+            let position = if position.turn == Color::WHITE {
+                position
+            } else {
+                position.mirror()
+            };
+
+            let is_mate = !0 != gen::get_check_restriction(&position);
+            return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None);
+        }
+
+        // fifty-move rule
+        if position.halfmove_clock >= 50 {
+            return (0, None);
+        }
+
+        // three-fold repetition
+        if position.halfmove_clock > 4 {
+            let hash = position.hash;
+            let hist = &position.history;
+            let limit = position.halfmove_clock.min(hist.len() as u16);
+
+            let mut n = 0;
+            for i in 0..limit {
+                let ply = hist.len() - i as usize - 1;
+                if hash == hist[ply] {
+                    n += 1;
+                    if n >= 2 { return (0, None); }
+                }
+            }
+        }
+
         // have we reached max depth?
         if depth <= 0 {
             return (sign * eval::evaluate(&position), None);
         }
 
-        // generate legal moves, then shuffle to improve alpha-beta pruning
-        let mut moves = gen::gen_moves(&position);
+        // shuffle to improve alpha-beta pruning
         moves.shuffle(&mut self.rng);
-
-        // no available moves? the game is over
-        if moves.is_empty() {
-            let perspective = if position.turn == Color::WHITE { position } else { position.mirror() };
-            let is_mate = !0 != gen::get_check_restriction(&perspective);
-            return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None);
-        }
 
         // choose the best variation
         let mut best_eval = MIN_EVAL;

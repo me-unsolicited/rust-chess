@@ -1,13 +1,13 @@
 use std::u64;
 
-use crate::engine::bb;
+use crate::engine::{bb, hash};
 use crate::engine::mov::Move;
 use crate::engine::piece::PieceType;
 use crate::engine::square::Square;
 
 const START_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct Board {
     pub placement: Placement,
     pub turn: Color,
@@ -15,6 +15,8 @@ pub struct Board {
     pub en_passant_target: Option<&'static Square>,
     pub halfmove_clock: u16,
     pub fullmove_number: u16,
+    pub history: Vec<u64>,
+    pub hash: u64,
 }
 
 #[derive(Copy, Clone)]
@@ -64,14 +66,19 @@ impl Board {
         let fen_halfmove_clock = parts.next().expect("expected FEN halfmove clock");
         let fen_fullmove_number = parts.next().expect("expected FEN fullmove number");
 
-        Board {
+        let mut board = Self {
             placement: parse_placement(fen_placement).expect("failed to parse FEN piece placement"),
             turn: parse_turn(fen_turn).expect("failed to parse FEN en passant target"),
             castle_rights: parse_castle_rights(fen_castle_rights).expect("failed to parse FEN castling rights"),
             en_passant_target: Square::parse(fen_en_passant_target),
             halfmove_clock: fen_halfmove_clock.parse().expect("failed to parse FEN halfmove clock"),
             fullmove_number: fen_fullmove_number.parse().expect("failed to parse FEN fullmove number"),
-        }
+            history: Vec::new(),
+            hash: 0,
+        };
+
+        board.hash = hash::of(&board);
+        board
     }
 
     pub fn start_pos() -> Board { Board::new(START_FEN) }
@@ -223,13 +230,23 @@ impl Board {
             }
         }
 
+        let is_reversible = !(*moving == PieceType::PAWN || bb::has_bit(self.placement.white | self.placement.black, capture_sq));
+        let halfmove_clock = if is_reversible {
+            self.halfmove_clock + 1
+        } else {
+            0
+        };
+
         let fullmove_number = if self.turn == Color::WHITE {
             self.fullmove_number
         } else {
             self.fullmove_number + 1
         };
 
-        Board {
+        let mut history = self.history.clone();
+        history.push(self.hash);
+
+        let mut update = Board {
             placement: Placement {
                 pawns,
                 knights,
@@ -248,15 +265,20 @@ impl Board {
                 queenside_b,
             },
             en_passant_target,
-            halfmove_clock: 0,
+            halfmove_clock,
             fullmove_number,
-        }
+            history,
+            hash: 0,
+        };
+
+        update.hash = hash::of(&update);
+        update
     }
 
     pub fn mirror(&self) -> Board {
 
         // symmetrically swap white/black positions
-        Board {
+        let mut mirror = Board {
             placement: Placement {
                 pawns: self.placement.pawns.swap_bytes(),
                 knights: self.placement.knights.swap_bytes(),
@@ -282,7 +304,12 @@ impl Board {
             },
             halfmove_clock: self.halfmove_clock,
             fullmove_number: self.fullmove_number,
-        }
+            history: Vec::new(),
+            hash: 0
+        };
+
+        mirror.hash = hash::of(&mirror);
+        mirror
     }
 }
 

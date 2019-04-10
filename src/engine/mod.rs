@@ -10,6 +10,7 @@ mod bb;
 mod board;
 mod eval;
 mod gen;
+mod hash;
 mod piece;
 mod search;
 mod square;

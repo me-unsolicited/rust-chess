@@ -19,11 +19,11 @@ pub fn search(state: Arc<Mutex<EngineState>>, p: GoParams) {
 
     let mut position = root_position;
     for mov in p.search_moves {
-        position = position.update(mov);
+        position = position.push(mov);
     }
 
     let mut searcher = new_searcher();
-    let mov = searcher.search(position);
+    let mov = searcher.search(&position);
 
     let stats = searcher.get_stats();
     eprintln!("---- {}", mov.uci());
@@ -62,7 +62,7 @@ impl SearchStats {
 }
 
 trait Searcher {
-    fn search(&mut self, position: Board) -> Move;
+    fn search(&mut self, position: &Board) -> Move;
     fn get_stats(&self) -> SearchStats;
 }
 
@@ -71,11 +71,12 @@ struct Negamax {
 }
 
 impl Searcher for Negamax {
-    fn search(&mut self, position: Board) -> Move {
+    fn search(&mut self, position: &Board) -> Move {
         let start = Instant::now();
 
+        let position = position.clone();
         let sign = if position.turn == Color::WHITE { 1 } else { -1 };
-        let (_, mov) = self.negamax(position, Self::DEPTH, sign);
+        let (_, mov, _) = self.negamax(position, Self::DEPTH, sign);
 
         self.stats.time_elapsed = start.elapsed();
 
@@ -97,7 +98,7 @@ impl Negamax {
         }
     }
 
-    fn negamax(&mut self, position: Board, depth: i32, sign: i32) -> (i32, Option<Move>) {
+    fn negamax(&mut self, mut position: Board, depth: i32, sign: i32) -> (i32, Option<Move>, Board) {
 
         // track search statistics
         self.stats.nodes_visited += 1;
@@ -109,40 +110,31 @@ impl Negamax {
         // no available moves? the game is over
         if moves.is_empty() {
 
-            let position = if position.turn == Color::WHITE {
-                position
+            // check restriction is calculated from white pieces perspective
+            let check_restriction = if position.turn == Color::WHITE {
+                gen::get_check_restriction(&position)
             } else {
-                position.mirror()
+                let mirror = position.mirror();
+                gen::get_check_restriction(&mirror)
             };
 
-            let is_mate = !0 != gen::get_check_restriction(&position);
-            return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None);
+            let is_mate = !0 != check_restriction;
+            return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None, position);
         }
 
         // fifty-move rule
         if position.halfmove_clock >= 50 {
-            return (0, None);
+            return (0, None, position);
         }
 
         // three-fold repetition
-        if position.halfmove_clock > 4 {
-            let hash = position.hash;
-            let hist = &position.history;
-            let limit = position.halfmove_clock.min(hist.len() as u16);
-
-            let mut n = 0;
-            for i in 0..limit {
-                let ply = hist.len() - i as usize - 1;
-                if hash == hist[ply] {
-                    n += 1;
-                    if n >= 2 { return (0, None); }
-                }
-            }
+        if is_three_fold(&position) {
+            return (0, None, position);
         }
 
         // have we reached max depth?
         if depth <= 0 {
-            return (sign * eval::evaluate(&position), None);
+            return (sign * eval::evaluate(&position), None, position);
         }
 
         // choose the best variation
@@ -151,9 +143,11 @@ impl Negamax {
 
         // go deeper for each move
         for mov in moves {
-            let moved = position.update(mov);
-            let (eval, _) = self.negamax(moved, depth - 1, -sign);
+            position = position.push(mov);
+            let (eval, _, stack) = self.negamax(position, depth - 1, -sign);
             let eval = -eval;
+
+            position = *stack.pop();
 
             if best_move.is_none() || eval > best_eval {
                 best_eval = eval;
@@ -161,7 +155,7 @@ impl Negamax {
             }
         }
 
-        (best_eval, best_move)
+        (best_eval, best_move, position)
     }
 }
 
@@ -171,7 +165,7 @@ struct NegamaxAb {
 }
 
 impl Searcher for NegamaxAb {
-    fn search(&mut self, position: Board) -> Move {
+    fn search(&mut self, position: &Board) -> Move {
 
         // re-initialize thread local random
         self.rng = rand::thread_rng();
@@ -179,8 +173,9 @@ impl Searcher for NegamaxAb {
         // begin timing the search routine
         let start = Instant::now();
 
+        let position = position.clone();
         let sign = if position.turn == Color::WHITE { 1 } else { -1 };
-        let (_, mov) = self.negamax(position, Self::DEPTH, MIN_EVAL, MAX_EVAL, sign);
+        let (_, mov, _) = self.negamax(position, Self::DEPTH, MIN_EVAL, MAX_EVAL, sign);
 
         self.stats.time_elapsed = start.elapsed();
 
@@ -203,7 +198,7 @@ impl NegamaxAb {
         }
     }
 
-    fn negamax(&mut self, position: Board, depth: i32, mut alpha: i32, beta: i32, sign: i32) -> (i32, Option<Move>) {
+    fn negamax(&mut self, mut position: Board, depth: i32, mut alpha: i32, beta: i32, sign: i32) -> (i32, Option<Move>, Board) {
 
         // track search statistics
         self.stats.nodes_visited += 1;
@@ -215,40 +210,31 @@ impl NegamaxAb {
         // no available moves? the game is over
         if moves.is_empty() {
 
-            let position = if position.turn == Color::WHITE {
-                position
+            // check restriction is calculated from white pieces perspective
+            let check_restriction = if position.turn == Color::WHITE {
+                gen::get_check_restriction(&position)
             } else {
-                position.mirror()
+                let mirror = position.mirror();
+                gen::get_check_restriction(&mirror)
             };
 
-            let is_mate = !0 != gen::get_check_restriction(&position);
-            return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None);
+            let is_mate = !0 != check_restriction;
+            return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None, position);
         }
 
         // fifty-move rule
         if position.halfmove_clock >= 50 {
-            return (0, None);
+            return (0, None, position);
         }
 
         // three-fold repetition
-        if position.halfmove_clock > 4 {
-            let hash = position.hash;
-            let hist = &position.history;
-            let limit = position.halfmove_clock.min(hist.len() as u16);
-
-            let mut n = 0;
-            for i in 0..limit {
-                let ply = hist.len() - i as usize - 1;
-                if hash == hist[ply] {
-                    n += 1;
-                    if n >= 2 { return (0, None); }
-                }
-            }
+        if is_three_fold(&position) {
+            return (0, None, position);
         }
 
         // have we reached max depth?
         if depth <= 0 {
-            return (sign * eval::evaluate(&position), None);
+            return (sign * eval::evaluate(&position), None, position);
         }
 
         // shuffle to improve alpha-beta pruning
@@ -260,9 +246,11 @@ impl NegamaxAb {
 
         // go deeper for each move
         for mov in moves {
-            let moved = position.update(mov);
-            let (eval, _) = self.negamax(moved, depth - 1, -beta, -alpha, -sign);
+            position = position.push(mov);
+            let (eval, _, stack) = self.negamax(position, depth - 1, -beta, -alpha, -sign);
             let eval = -eval;
+
+            position = *stack.pop();
 
             if best_move.is_none() || eval > best_eval {
                 best_eval = eval;
@@ -276,6 +264,36 @@ impl NegamaxAb {
             }
         }
 
-        (best_eval, best_move)
+        (best_eval, best_move, position)
     }
+}
+
+fn is_three_fold(position: &Board) -> bool {
+
+    if position.halfmove_clock > 4 {
+        let hash = position.hash;
+
+        let mut n = 0;
+        let mut previous = position.previous.as_ref();
+        while previous.is_some() {
+            let current = previous.unwrap();
+
+            // find a repetition
+            if hash == current.hash {
+                n += 1;
+                if n >= 2 {
+                    return true;
+                }
+            }
+
+            // look deeper unless halfmove_clock indicates irreversible move
+            previous = if current.halfmove_clock > 0 {
+                current.previous.as_ref()
+            } else {
+                None
+            }
+        }
+    }
+
+    false
 }

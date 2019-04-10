@@ -15,7 +15,7 @@ pub struct Board {
     pub en_passant_target: Option<&'static Square>,
     pub halfmove_clock: u16,
     pub fullmove_number: u16,
-    pub history: Vec<u64>,
+    pub previous: Option<Box<Board>>,
     pub hash: u64,
 }
 
@@ -73,7 +73,7 @@ impl Board {
             en_passant_target: Square::parse(fen_en_passant_target),
             halfmove_clock: fen_halfmove_clock.parse().expect("failed to parse FEN halfmove clock"),
             fullmove_number: fen_fullmove_number.parse().expect("failed to parse FEN fullmove number"),
-            history: Vec::new(),
+            previous: None,
             hash: 0,
         };
 
@@ -83,7 +83,7 @@ impl Board {
 
     pub fn start_pos() -> Board { Board::new(START_FEN) }
 
-    pub fn update(&self, mov: Move) -> Self {
+    pub fn push(self, mov: Move) -> Self {
         let from_sq = mov.from.idx as i32;
         let to_sq = mov.to.idx as i32;
 
@@ -243,9 +243,6 @@ impl Board {
             self.fullmove_number + 1
         };
 
-        let mut history = self.history.clone();
-        history.push(self.hash);
-
         let mut update = Board {
             placement: Placement {
                 pawns,
@@ -267,12 +264,16 @@ impl Board {
             en_passant_target,
             halfmove_clock,
             fullmove_number,
-            history,
+            previous: Some(Box::new(self)),
             hash: 0,
         };
 
         update.hash = hash::of(&update);
         update
+    }
+
+    pub fn pop(self) -> Box<Board> {
+        self.previous.expect("no previous position")
     }
 
     pub fn mirror(&self) -> Board {
@@ -304,8 +305,8 @@ impl Board {
             },
             halfmove_clock: self.halfmove_clock,
             fullmove_number: self.fullmove_number,
-            history: Vec::new(),
-            hash: 0
+            previous: None,
+            hash: 0,
         };
 
         mirror.hash = hash::of(&mirror);

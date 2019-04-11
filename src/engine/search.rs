@@ -119,19 +119,6 @@ impl Negamax {
             return (0, None, position);
         }
 
-        // find transposition and exit early if already evaluated at depth
-        // must at least 2-ply or won't find draws
-        if depth < Self::DEPTH - 1 {
-            let mut table = self.table.lock().unwrap();
-            let transposition = table.get_mut(&position.hash);
-            if let Some(transposition) = transposition {
-                self.stats.tt_hits += 1;
-                if transposition.eval_depth >= depth {
-                    return (transposition.eval, transposition.best_move, position);
-                }
-            }
-        }
-
         // have we reached max depth?
         if depth <= 0 {
             return (sign * eval::evaluate(&position), None, position);
@@ -153,6 +140,19 @@ impl Negamax {
 
             let is_mate = !0 != check_restriction;
             return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None, position);
+        }
+
+        // find transposition and exit early if already evaluated at depth
+        // must at least 2-ply or won't find endgame
+        if depth < Self::DEPTH - 1 {
+            let mut table = self.table.lock().unwrap();
+            let transposition = table.get_mut(&position.hash);
+            if let Some(transposition) = transposition {
+                self.stats.tt_hits += 1;
+                if transposition.eval_depth >= depth {
+                    return (transposition.eval, transposition.best_move, position);
+                }
+            }
         }
 
         // choose the best variation
@@ -217,7 +217,7 @@ impl Searcher for NegamaxAb {
 }
 
 impl NegamaxAb {
-    const DEPTH: i32 = 7;
+    const DEPTH: i32 = 6
 
     #[allow(dead_code)]
     pub fn new(table: Arc<Mutex<HashMap<u64, Transposition>>>) -> Self {
@@ -244,21 +244,6 @@ impl NegamaxAb {
             return (0, None, position);
         }
 
-        // find transposition and exit early if already evaluated at depth
-        // must at least 2-ply or won't find draws
-        let mut known_move = None;
-        if depth < Self::DEPTH - 1 {
-            let mut table = self.table.lock().unwrap();
-            let transposition = table.get_mut(&position.hash);
-            if let Some(transposition) = transposition {
-                self.stats.tt_hits += 1;
-                if transposition.eval_depth >= depth {
-                    return (transposition.eval, transposition.best_move, position);
-                }
-                known_move = transposition.best_move;
-            }
-        }
-
         // have we reached max depth?
         if depth <= 0 {
             return (sign * eval::evaluate(&position), None, position);
@@ -280,6 +265,21 @@ impl NegamaxAb {
 
             let is_mate = !0 != check_restriction;
             return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None, position);
+        }
+
+        // find transposition and exit early if already evaluated at depth
+        // must at least 2-ply or won't find endgame
+        let mut known_move = None;
+        if depth < Self::DEPTH - 1 {
+            let mut table = self.table.lock().unwrap();
+            let transposition = table.get_mut(&position.hash);
+            if let Some(transposition) = transposition {
+                self.stats.tt_hits += 1;
+                if transposition.eval_depth >= depth {
+                    return (transposition.eval, transposition.best_move, position);
+                }
+                known_move = transposition.best_move;
+            }
         }
 
         // order moves to improve alpha-beta pruning

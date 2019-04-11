@@ -4,6 +4,7 @@ use crate::engine::{bb, hash};
 use crate::engine::mov::Move;
 use crate::engine::piece::PieceType;
 use crate::engine::square::Square;
+use std::sync::Arc;
 
 const START_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -15,7 +16,7 @@ pub struct Board {
     pub en_passant_target: Option<&'static Square>,
     pub halfmove_clock: u16,
     pub fullmove_number: u16,
-    pub previous: Option<Box<Board>>,
+    pub previous: Option<Arc<Board>>,
     pub hash: u64,
 }
 
@@ -83,7 +84,7 @@ impl Board {
 
     pub fn start_pos() -> Board { Board::new(START_FEN) }
 
-    pub fn push(self, mov: Move) -> Self {
+    pub fn push(&mut self, mov: Move) {
         let from_sq = mov.from.idx as i32;
         let to_sq = mov.to.idx as i32;
 
@@ -243,37 +244,46 @@ impl Board {
             self.fullmove_number + 1
         };
 
-        let mut update = Board {
-            placement: Placement {
-                pawns,
-                knights,
-                bishops,
-                rooks,
-                queens,
-                kings,
-                white,
-                black,
-            },
-            turn: self.turn.other(),
-            castle_rights: CastleRights {
-                kingside_w,
-                queenside_w,
-                kingside_b,
-                queenside_b,
-            },
-            en_passant_target,
-            halfmove_clock,
-            fullmove_number,
-            previous: Some(Box::new(self)),
-            hash: 0,
-        };
+        // clone self as a previous position
+        let previous = Some(Arc::from(self.clone()));
 
-        update.hash = hash::of(&update);
-        update
+        // finally update self
+        self.placement = Placement {
+            pawns,
+            knights,
+            bishops,
+            rooks,
+            queens,
+            kings,
+            white,
+            black,
+        };
+        self.turn = self.turn.other();
+        self.castle_rights = CastleRights {
+            kingside_w,
+            queenside_w,
+            kingside_b,
+            queenside_b,
+        };
+        self.en_passant_target = en_passant_target;
+        self.halfmove_clock = halfmove_clock;
+        self.fullmove_number = fullmove_number;
+        self.previous = previous;
+        self.hash = hash::of(&self);
     }
 
-    pub fn pop(self) -> Box<Board> {
-        self.previous.expect("no previous position")
+    pub fn pop(&mut self) {
+
+        // take the previous position
+        let previous = self.previous.as_ref().expect("no previous position");
+        self.placement = previous.placement;
+        self.turn = previous.turn;
+        self.castle_rights = previous.castle_rights;
+        self.en_passant_target = previous.en_passant_target;
+        self.halfmove_clock = previous.halfmove_clock;
+        self.fullmove_number = previous.fullmove_number;
+        self.hash = previous.hash;
+        self.previous = previous.previous.clone();
     }
 
     pub fn mirror(&self) -> Board {

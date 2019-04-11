@@ -18,7 +18,7 @@ pub fn search(state: Arc<Mutex<EngineState>>, p: GoParams) {
 
     let mut position = root_position;
     for mov in p.search_moves {
-        position = position.push(mov);
+        position.push(mov);
     }
 
     let table = state.lock().unwrap().table.clone();
@@ -78,9 +78,9 @@ impl Searcher for Negamax {
     fn search(&mut self, position: &Board) -> Move {
         let start = Instant::now();
 
-        let position = position.clone();
+        let mut position = position.clone();
         let sign = if position.turn == Color::WHITE { 1 } else { -1 };
-        let (_, mov, _) = self.negamax(position, Self::DEPTH, sign);
+        let (_, mov) = self.negamax(&mut position, Self::DEPTH, sign);
 
         self.stats.time_elapsed = start.elapsed();
 
@@ -103,7 +103,7 @@ impl Negamax {
         }
     }
 
-    fn negamax(&mut self, mut position: Board, depth: i32, sign: i32) -> (i32, Option<Move>, Board) {
+    fn negamax(&mut self, position: &mut Board, depth: i32, sign: i32) -> (i32, Option<Move>) {
 
         // track search statistics
         self.stats.nodes_visited += 1;
@@ -111,17 +111,17 @@ impl Negamax {
 
         // fifty-move rule
         if position.halfmove_clock >= 50 {
-            return (0, None, position);
+            return (0, None);
         }
 
         // three-fold repetition
         if is_three_fold(&position) {
-            return (0, None, position);
+            return (0, None);
         }
 
         // have we reached max depth?
         if depth <= 0 {
-            return (sign * eval::evaluate(&position), None, position);
+            return (sign * eval::evaluate(&position), None);
         }
 
         // generate moves to test for checkmate/stalemate
@@ -139,7 +139,7 @@ impl Negamax {
             };
 
             let is_mate = !0 != check_restriction;
-            return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None, position);
+            return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None);
         }
 
         // find transposition and exit early if already evaluated at depth
@@ -150,7 +150,7 @@ impl Negamax {
             if let Some(transposition) = transposition {
                 self.stats.tt_hits += 1;
                 if transposition.eval_depth >= depth {
-                    return (transposition.eval, transposition.best_move, position);
+                    return (transposition.eval, transposition.best_move);
                 }
             }
         }
@@ -161,11 +161,11 @@ impl Negamax {
 
         // go deeper for each move
         for mov in moves {
-            position = position.push(mov);
-            let (eval, _, stack) = self.negamax(position, depth - 1, -sign);
+            position.push(mov);
+            let (eval, _) = self.negamax(position, depth - 1, -sign);
             let eval = -eval;
 
-            position = *stack.pop();
+            position.pop();
 
             if best_move.is_none() || eval > best_eval {
                 best_eval = eval;
@@ -183,7 +183,7 @@ impl Negamax {
             });
         }
 
-        (best_eval, best_move, position)
+        (best_eval, best_move)
     }
 }
 
@@ -202,9 +202,9 @@ impl Searcher for NegamaxAb {
         // begin timing the search routine
         let start = Instant::now();
 
-        let position = position.clone();
+        let mut position = position.clone();
         let sign = if position.turn == Color::WHITE { 1 } else { -1 };
-        let (_, mov, _) = self.negamax(position, Self::DEPTH, MIN_EVAL, MAX_EVAL, sign);
+        let (_, mov) = self.negamax(&mut position, Self::DEPTH, MIN_EVAL, MAX_EVAL, sign);
 
         self.stats.time_elapsed = start.elapsed();
 
@@ -228,7 +228,7 @@ impl NegamaxAb {
         }
     }
 
-    fn negamax(&mut self, mut position: Board, depth: i32, mut alpha: i32, beta: i32, sign: i32) -> (i32, Option<Move>, Board) {
+    fn negamax(&mut self, position: &mut Board, depth: i32, mut alpha: i32, beta: i32, sign: i32) -> (i32, Option<Move>) {
 
         // track search statistics
         self.stats.nodes_visited += 1;
@@ -236,17 +236,17 @@ impl NegamaxAb {
 
         // fifty-move rule
         if position.halfmove_clock >= 50 {
-            return (0, None, position);
+            return (0, None);
         }
 
         // three-fold repetition
         if is_three_fold(&position) {
-            return (0, None, position);
+            return (0, None);
         }
 
         // have we reached max depth?
         if depth <= 0 {
-            return (sign * eval::evaluate(&position), None, position);
+            return (sign * eval::evaluate(&position), None);
         }
 
         // generate moves to test for checkmate/stalemate
@@ -264,7 +264,7 @@ impl NegamaxAb {
             };
 
             let is_mate = !0 != check_restriction;
-            return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None, position);
+            return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None);
         }
 
         // find transposition and exit early if already evaluated at depth
@@ -276,7 +276,7 @@ impl NegamaxAb {
             if let Some(transposition) = transposition {
                 self.stats.tt_hits += 1;
                 if transposition.eval_depth >= depth {
-                    return (transposition.eval, transposition.best_move, position);
+                    return (transposition.eval, transposition.best_move);
                 }
                 known_move = transposition.best_move;
             }
@@ -291,11 +291,11 @@ impl NegamaxAb {
 
         // go deeper for each move
         for mov in moves {
-            position = position.push(mov);
-            let (eval, _, stack) = self.negamax(position, depth - 1, -beta, -alpha, -sign);
+            position.push(mov);
+            let (eval, _) = self.negamax(position, depth - 1, -beta, -alpha, -sign);
             let eval = -eval;
 
-            position = *stack.pop();
+            position.pop();
 
             if best_move.is_none() || eval > best_eval {
                 best_eval = eval;
@@ -319,7 +319,7 @@ impl NegamaxAb {
             });
         }
 
-        (best_eval, best_move, position)
+        (best_eval, best_move)
     }
 }
 

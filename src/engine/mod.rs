@@ -87,7 +87,7 @@ impl Engine {
     pub fn set_start_pos(&mut self, moves: Vec<Move>) {
         let mut position = Board::start_pos();
         for mov in moves {
-            position = position.push(mov);
+            position.push(mov);
         }
 
         self.state.lock().unwrap().position = position;
@@ -96,7 +96,7 @@ impl Engine {
     pub fn set_position(&mut self, fen: &str, moves: Vec<Move>) {
         let mut position = Board::new(fen);
         for mov in moves {
-            position = position.push(mov);
+            position.push(mov);
         }
 
         self.state.lock().unwrap().position = position;

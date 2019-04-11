@@ -122,12 +122,13 @@ impl Negamax {
         }
 
         // find transposition and exit early if already evaluated at depth
-        {
+        // must at least go past start depth or won't find draws
+        if depth < Self::DEPTH {
             let mut table = self.table.lock().unwrap();
             let transposition = table.get_mut(&position.hash);
             if let Some(transposition) = transposition {
+                self.stats.tt_hits += 1;
                 if transposition.eval_depth >= depth {
-                    self.stats.tt_hits += 1;
                     return (transposition.eval, transposition.best_move, position);
                 }
             }
@@ -247,7 +248,8 @@ impl NegamaxAb {
         }
 
         // find transposition and exit early if already evaluated at depth
-        {
+        // must at least go past start depth or won't find draws
+        if depth < Self::DEPTH {
             let mut table = self.table.lock().unwrap();
             let transposition = table.get_mut(&position.hash);
             if let Some(transposition) = transposition {

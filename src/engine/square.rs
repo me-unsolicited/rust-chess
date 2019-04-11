@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 const MAGIC_MIRROR: u8 = 56;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Square {
     pub idx: u8,
     pub symbol: &'static str,

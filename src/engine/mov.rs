@@ -20,7 +20,7 @@ pub const CASTLES: [((&Square, &Square), (&Square, &Square)); 4] = [
     KINGSIDE_CASTLE_B,
 ];
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Move {
     pub from: &'static Square,
     pub to: &'static Square,

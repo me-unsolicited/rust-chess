@@ -1,8 +1,6 @@
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use rand::prelude::*;
-
 use crate::engine::{EngineState, eval, gen, GoParams, Transposition};
 use crate::engine::board::{Board, Color};
 use crate::engine::mov::Move;
@@ -248,6 +246,7 @@ impl NegamaxAb {
 
         // find transposition and exit early if already evaluated at depth
         // must at least 2-ply or won't find draws
+        let mut known_move = None;
         if depth < Self::DEPTH - 1 {
             let mut table = self.table.lock().unwrap();
             let transposition = table.get_mut(&position.hash);
@@ -256,6 +255,7 @@ impl NegamaxAb {
                 if transposition.eval_depth >= depth {
                     return (transposition.eval, transposition.best_move, position);
                 }
+                known_move = transposition.best_move;
             }
         }
 
@@ -282,8 +282,8 @@ impl NegamaxAb {
             return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None, position);
         }
 
-        // shuffle to improve alpha-beta pruning
-        moves.shuffle(&mut self.rng);
+        // order moves to improve alpha-beta pruning
+        order_moves(&mut moves, known_move);
 
         // choose the best variation
         let mut best_eval = MIN_EVAL;
@@ -351,4 +351,17 @@ fn is_three_fold(position: &Board) -> bool {
     }
 
     false
+}
+
+fn order_moves(moves: &mut Vec<Move>, pv: Option<Move>) {
+
+    let mut index = None;
+    if let Some(mov) = pv {
+        index = moves.iter().position(|m| mov == *m);
+    }
+
+    // put known best move at the top
+    if let Some(i) = index {
+        moves.swap(0, i);
+    }
 }

@@ -30,7 +30,7 @@ pub fn search(state: Arc<Mutex<EngineState>>, p: GoParams) {
     let stats = searcher.get_stats();
     eprintln!("---- {}", mov.uci());
     eprintln!("nodes_visited: {}", stats.nodes_visited);
-    eprintln!("tt_table_hits: {}", stats.tt_table_hits);
+    eprintln!("tt_hits: {}", stats.tt_hits);
     eprintln!("time_elapsed (ms): {}", stats.time_elapsed.as_millis());
     eprintln!("max_depth: {}", stats.max_depth);
     eprintln!("nps: {}", stats.nps());
@@ -41,7 +41,7 @@ pub fn search(state: Arc<Mutex<EngineState>>, p: GoParams) {
 #[derive(Copy, Clone)]
 struct SearchStats {
     nodes_visited: u64,
-    tt_table_hits: i32,
+    tt_hits: i32,
     time_elapsed: Duration,
     max_depth: i32,
 }
@@ -50,7 +50,7 @@ impl SearchStats {
     pub fn new() -> Self {
         Self {
             nodes_visited: 0,
-            tt_table_hits: 0,
+            tt_hits: 0,
             time_elapsed: Duration::from_secs(0),
             max_depth: 0,
         }
@@ -117,7 +117,7 @@ impl Negamax {
             let transposition = table.get_mut(&position.hash);
             if let Some(transposition) = transposition {
                 if transposition.eval_depth >= depth {
-                    self.stats.tt_table_hits += 1;
+                    self.stats.tt_hits += 1;
                     return (transposition.eval, transposition.best_move, position);
                 }
             }
@@ -240,7 +240,7 @@ impl NegamaxAb {
             let mut table = self.table.lock().unwrap();
             let transposition = table.get_mut(&position.hash);
             if let Some(transposition) = transposition {
-                self.stats.tt_table_hits += 1;
+                self.stats.tt_hits += 1;
                 if transposition.eval_depth >= depth {
                     return (transposition.eval, transposition.best_move, position);
                 }

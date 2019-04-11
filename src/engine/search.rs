@@ -111,6 +111,16 @@ impl Negamax {
         self.stats.nodes_visited += 1;
         self.stats.max_depth = self.stats.max_depth.max(Self::DEPTH - depth);
 
+        // fifty-move rule
+        if position.halfmove_clock >= 50 {
+            return (0, None, position);
+        }
+
+        // three-fold repetition
+        if is_three_fold(&position) {
+            return (0, None, position);
+        }
+
         // find transposition and exit early if already evaluated at depth
         {
             let mut table = self.table.lock().unwrap();
@@ -121,16 +131,6 @@ impl Negamax {
                     return (transposition.eval, transposition.best_move, position);
                 }
             }
-        }
-
-        // fifty-move rule
-        if position.halfmove_clock >= 50 {
-            return (0, None, position);
-        }
-
-        // three-fold repetition
-        if is_three_fold(&position) {
-            return (0, None, position);
         }
 
         // have we reached max depth?
@@ -235,6 +235,17 @@ impl NegamaxAb {
         self.stats.nodes_visited += 1;
         self.stats.max_depth = self.stats.max_depth.max(Self::DEPTH - depth);
 
+        // fifty-move rule
+        if position.halfmove_clock >= 50 {
+            return (0, None, position);
+        }
+
+        // three-fold repetition
+        if is_three_fold(&position) {
+            eprintln!("three-fold at {}", Self::DEPTH - depth);
+            return (0, None, position);
+        }
+
         // find transposition and exit early if already evaluated at depth
         {
             let mut table = self.table.lock().unwrap();
@@ -245,16 +256,6 @@ impl NegamaxAb {
                     return (transposition.eval, transposition.best_move, position);
                 }
             }
-        }
-
-        // fifty-move rule
-        if position.halfmove_clock >= 50 {
-            return (0, None, position);
-        }
-
-        // three-fold repetition
-        if is_three_fold(&position) {
-            return (0, None, position);
         }
 
         // have we reached max depth?

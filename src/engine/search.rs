@@ -243,7 +243,6 @@ impl NegamaxAb {
 
         // three-fold repetition
         if is_three_fold(&position) {
-            eprintln!("three-fold at {}", Self::DEPTH - depth);
             return (0, None, position);
         }
 

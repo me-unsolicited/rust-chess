@@ -4,6 +4,7 @@ use std::thread::JoinHandle;
 
 use crate::engine::board::Board;
 use crate::engine::mov::Move;
+use std::collections::HashMap;
 
 pub mod mov;
 mod bb;
@@ -47,6 +48,7 @@ pub struct Engine {
 pub struct EngineState {
     callbacks: Callbacks,
     position: Board,
+    table: Arc<Mutex<HashMap<u64, Transposition>>>,
 }
 
 
@@ -56,11 +58,19 @@ pub struct Callbacks {
 }
 
 
+pub struct Transposition {
+    eval: i32,
+    eval_depth: i32,
+    best_move: Option<Move>,
+}
+
+
 impl Engine {
     pub fn new(callbacks: Callbacks) -> Engine {
         let state = EngineState {
             callbacks,
             position: Board::start_pos(),
+            table: Arc::new(Mutex::new(HashMap::new())),
         };
 
         Engine {
@@ -71,6 +81,7 @@ impl Engine {
 
     pub fn reset(&mut self) {
         self.set_start_pos(Vec::new());
+        self.state.lock().unwrap().table.lock().unwrap().clear();
     }
 
     pub fn set_start_pos(&mut self, moves: Vec<Move>) {

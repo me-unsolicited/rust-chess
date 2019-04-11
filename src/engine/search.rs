@@ -3,16 +3,17 @@ use std::time::{Duration, Instant};
 
 use rand::prelude::*;
 
-use crate::engine::{EngineState, eval, gen, GoParams};
+use crate::engine::{EngineState, eval, gen, GoParams, Transposition};
 use crate::engine::board::{Board, Color};
 use crate::engine::mov::Move;
+use std::collections::HashMap;
 
 // min/max values that won't overflow on negation
 const MIN_EVAL: i32 = -std::i32::MAX;
 const MAX_EVAL: i32 = -MIN_EVAL;
 
 // compile-time configuration of search algorithm
-fn new_searcher() -> impl Searcher { NegamaxAb::new() }
+fn new_searcher(table: Arc<Mutex<HashMap<u64, Transposition>>>) -> impl Searcher { NegamaxAb::new(table) }
 
 pub fn search(state: Arc<Mutex<EngineState>>, p: GoParams) {
     let root_position = state.lock().unwrap().position.clone();
@@ -22,12 +23,14 @@ pub fn search(state: Arc<Mutex<EngineState>>, p: GoParams) {
         position = position.push(mov);
     }
 
-    let mut searcher = new_searcher();
+    let table = state.lock().unwrap().table.clone();
+    let mut searcher = new_searcher(table);
     let mov = searcher.search(&position);
 
     let stats = searcher.get_stats();
     eprintln!("---- {}", mov.uci());
     eprintln!("nodes_visited: {}", stats.nodes_visited);
+    eprintln!("tt_table_hits: {}", stats.tt_table_hits);
     eprintln!("time_elapsed (ms): {}", stats.time_elapsed.as_millis());
     eprintln!("max_depth: {}", stats.max_depth);
     eprintln!("nps: {}", stats.nps());
@@ -38,6 +41,7 @@ pub fn search(state: Arc<Mutex<EngineState>>, p: GoParams) {
 #[derive(Copy, Clone)]
 struct SearchStats {
     nodes_visited: u64,
+    tt_table_hits: i32,
     time_elapsed: Duration,
     max_depth: i32,
 }
@@ -46,6 +50,7 @@ impl SearchStats {
     pub fn new() -> Self {
         Self {
             nodes_visited: 0,
+            tt_table_hits: 0,
             time_elapsed: Duration::from_secs(0),
             max_depth: 0,
         }
@@ -68,6 +73,7 @@ trait Searcher {
 
 struct Negamax {
     stats: SearchStats,
+    table: Arc<Mutex<HashMap<u64, Transposition>>>,
 }
 
 impl Searcher for Negamax {
@@ -92,9 +98,10 @@ impl Negamax {
     const DEPTH: i32 = 5;
 
     #[allow(dead_code)]
-    pub fn new() -> Self {
+    pub fn new(table: Arc<Mutex<HashMap<u64, Transposition>>>) -> Self {
         Self {
-            stats: SearchStats::new()
+            stats: SearchStats::new(),
+            table,
         }
     }
 
@@ -103,6 +110,18 @@ impl Negamax {
         // track search statistics
         self.stats.nodes_visited += 1;
         self.stats.max_depth = self.stats.max_depth.max(Self::DEPTH - depth);
+
+        // find transposition and exit early if already evaluated at depth
+        {
+            let mut table = self.table.lock().unwrap();
+            let transposition = table.get_mut(&position.hash);
+            if let Some(transposition) = transposition {
+                if transposition.eval_depth >= depth {
+                    self.stats.tt_table_hits += 1;
+                    return (transposition.eval, transposition.best_move, position);
+                }
+            }
+        }
 
         // fifty-move rule
         if position.halfmove_clock >= 50 {
@@ -155,12 +174,23 @@ impl Negamax {
             }
         }
 
+        // update transposition table
+        {
+            let mut table = self.table.lock().unwrap();
+            table.insert(position.hash, Transposition {
+                eval: best_eval,
+                eval_depth: depth,
+                best_move,
+            });
+        }
+
         (best_eval, best_move, position)
     }
 }
 
 struct NegamaxAb {
     stats: SearchStats,
+    table: Arc<Mutex<HashMap<u64, Transposition>>>,
     rng: rand::rngs::ThreadRng,
 }
 
@@ -191,9 +221,10 @@ impl NegamaxAb {
     const DEPTH: i32 = 6;
 
     #[allow(dead_code)]
-    pub fn new() -> Self {
+    pub fn new(table: Arc<Mutex<HashMap<u64, Transposition>>>) -> Self {
         Self {
             stats: SearchStats::new(),
+            table,
             rng: rand::thread_rng(),
         }
     }
@@ -203,6 +234,18 @@ impl NegamaxAb {
         // track search statistics
         self.stats.nodes_visited += 1;
         self.stats.max_depth = self.stats.max_depth.max(Self::DEPTH - depth);
+
+        // find transposition and exit early if already evaluated at depth
+        {
+            let mut table = self.table.lock().unwrap();
+            let transposition = table.get_mut(&position.hash);
+            if let Some(transposition) = transposition {
+                self.stats.tt_table_hits += 1;
+                if transposition.eval_depth >= depth {
+                    return (transposition.eval, transposition.best_move, position);
+                }
+            }
+        }
 
         // fifty-move rule
         if position.halfmove_clock >= 50 {
@@ -262,6 +305,16 @@ impl NegamaxAb {
             if alpha >= beta {
                 break;
             }
+        }
+
+        // update transposition table
+        {
+            let mut table = self.table.lock().unwrap();
+            table.insert(position.hash, Transposition {
+                eval: best_eval,
+                eval_depth: depth,
+                best_move,
+            });
         }
 
         (best_eval, best_move, position)

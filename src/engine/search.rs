@@ -179,7 +179,7 @@ impl NegamaxAb {
             let eval = if depth > 0 {
                 -self.negamax(position, depth - 1, -beta, -alpha, -sign)
             } else {
-                -self.quiesce(position, depth - 1, -beta, -alpha)
+                self.quiesce(position, depth - 1, -beta, -alpha)
             };
 
             position.pop();

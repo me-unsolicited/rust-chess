@@ -76,19 +76,25 @@ struct NegamaxAb {
 impl Searcher for NegamaxAb {
     fn search(&mut self, position: &Board) -> Move {
 
-        // re-initialize thread local random
+        // re-initialize thread local random, maybe for the first time
         self.rng = rand::thread_rng();
 
         // begin timing the search routine
         let start = Instant::now();
 
+        // initiate search
         let mut position = position.clone();
         let sign = if position.turn == Color::WHITE { 1 } else { -1 };
-        let (_, mov) = self.negamax(&mut position, Self::DEPTH, MIN_EVAL, MAX_EVAL, sign);
+        self.negamax(&mut position, Self::DEPTH, MIN_EVAL, MAX_EVAL, sign);
+
+        // get the PV from the transposition table
+        let table = self.table.lock().unwrap();
+        let transposition = table.get(&position.hash).expect("no root transposition");
+        let mov = transposition.best_move.expect("no move");
 
         self.stats.time_elapsed = start.elapsed();
 
-        mov.expect("no move")
+        mov
     }
 
     fn get_stats(&self) -> SearchStats {
@@ -108,7 +114,7 @@ impl NegamaxAb {
         }
     }
 
-    fn negamax(&mut self, position: &mut Board, depth: i32, mut alpha: i32, beta: i32, sign: i32) -> (i32, Option<Move>) {
+    fn negamax(&mut self, position: &mut Board, depth: i32, mut alpha: i32, beta: i32, sign: i32) -> i32 {
 
         // track search statistics
         self.stats.nodes_visited += 1;
@@ -116,12 +122,12 @@ impl NegamaxAb {
 
         // fifty-move rule
         if position.halfmove_clock >= 50 {
-            return (0, None);
+            return 0;
         }
 
         // three-fold repetition
         if is_three_fold(&position) {
-            return (0, None);
+            return 0;
         }
 
         // generate moves to test for checkmate/stalemate
@@ -130,7 +136,7 @@ impl NegamaxAb {
         // no available moves? the game is over
         if moves.is_empty() {
             let is_mate = position.is_check();
-            return (if is_mate { MIN_EVAL + position.fullmove_number as i32 } else { 0 }, None);
+            return if is_mate { MIN_EVAL + position.fullmove_number as i32 } else { 0 };
         }
 
         // find transposition
@@ -139,12 +145,12 @@ impl NegamaxAb {
 
             // repeating the same position toward a draw?
             if t.eval_depth > depth {
-                return (0, None);
+                return 0;
             }
 
             // already evaluated at depth?
             if t.eval_depth == depth {
-                return (t.eval, t.best_move);
+                return t.eval;
             }
         }
 
@@ -160,7 +166,7 @@ impl NegamaxAb {
             position.push(mov);
 
             let eval = if depth > 0 {
-                -self.negamax(position, depth - 1, -beta, -alpha, -sign).0
+                -self.negamax(position, depth - 1, -beta, -alpha, -sign)
             } else {
                 -self.quiesce(position, depth - 1, -beta, -alpha)
             };
@@ -186,7 +192,7 @@ impl NegamaxAb {
             best_move,
         });
 
-        (best_eval, best_move)
+        best_eval
     }
 
     fn quiesce(&mut self, position: &mut Board, depth: i32, mut alpha: i32, beta: i32) -> i32 {

@@ -164,7 +164,8 @@ impl NegamaxAb {
 
         // Lazy-SMP: at the root node, reorder the moves according to the current thread
         if depth == self.ab_depth {
-            moves.swap(0, self.thread_index as usize);
+            let swap_index = (moves.len() - 1).min(self.thread_index);
+            moves.swap(0, swap_index);
         }
 
         // choose the best variation

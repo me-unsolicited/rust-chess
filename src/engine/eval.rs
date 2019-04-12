@@ -41,7 +41,8 @@ pub fn evaluate_exchange(board: &Board, mov: &Move) -> i32 {
 
     let mut capture_sq = mov.to.idx as i32;
     if let Some(ep_target) = board.en_passant_target {
-        if ep_target.idx == mov.to.idx {
+        let moving_pawn = 0 != board.placement.pawns & (1 << mov.from.idx);
+        if moving_pawn && ep_target.idx == mov.to.idx {
             match board.turn {
                 Color::WHITE => capture_sq -= 8,
                 Color::BLACK => capture_sq += 8,

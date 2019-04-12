@@ -105,6 +105,9 @@ impl Engine {
 
     pub fn go(&mut self, p: GoParams) {
 
+        eprintln!();
+        eprintln!("---- searching with {} threads", self.num_cpus);
+
         let mut threads = Vec::new();
         let (tx_stats, rx_stats) = mpsc::channel();
 
@@ -144,7 +147,6 @@ impl Engine {
             }
 
             // report statistics to std error
-            eprintln!();
             eprintln!("---- {}", mov.uci());
             eprintln!("nodes_visited: {}", stats.nodes_visited);
             eprintln!("tt_hits: {}", stats.tt_hits);

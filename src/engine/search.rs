@@ -253,7 +253,16 @@ impl NegamaxAb {
     }
 
     fn write_transposition(&mut self, position: &Board, t: Transposition) {
-        self.table.lock().unwrap().insert(position.hash, t);
+        let mut table = self.table.lock().unwrap();
+
+        // do not overwrite a more valuable record; this can happen in parallel searches
+        if let Some(entry) = table.get(&position.hash) {
+            if t.eval_depth < entry.eval_depth {
+                return;
+            }
+        }
+
+        table.insert(position.hash, t);
     }
 }
 

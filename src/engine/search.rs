@@ -165,7 +165,7 @@ impl NegamaxAb {
         }
 
         // order moves to improve alpha-beta pruning
-        order_moves(&mut moves, transposition.as_ref());
+        order_moves(&mut moves, position, transposition.as_ref());
 
         // choose the best variation
         let mut best_eval = MIN_EVAL;
@@ -246,20 +246,28 @@ fn is_three_fold(position: &Board) -> bool {
     false
 }
 
-fn order_moves(moves: &mut Vec<Move>, transposition: Option<&Transposition>) {
+fn order_moves(moves: &mut Vec<Move>, board: &Board, transposition: Option<&Transposition>) {
 
     let mut pv = None;
     if let Some(t) = transposition {
         pv = t.best_move;
     }
 
-    let mut index = None;
-    if let Some(mov) = pv {
-        index = moves.iter().position(|m| mov == *m);
+    let mut orders = Vec::with_capacity(moves.len());
+    while !moves.is_empty() {
+
+        let mov = moves.pop().unwrap();
+        let order = if pv.is_some() && mov == pv.unwrap() {
+            MAX_EVAL
+        } else {
+            eval::evaluate_exchange(board, &mov)
+        };
+
+        orders.push((mov, order));
     }
 
-    // put known best move at the top
-    if let Some(i) = index {
-        moves.swap(0, i);
+    orders.sort_by_key(|o| o.1);
+    while !orders.is_empty() {
+        moves.push(orders.pop().unwrap().0);
     }
 }

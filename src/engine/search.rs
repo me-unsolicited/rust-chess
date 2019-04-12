@@ -121,6 +121,11 @@ impl NegamaxAb {
 
     fn negamax(&mut self, position: &mut Board, depth: i32, mut alpha: i32, beta: i32, sign: i32) -> i32 {
 
+        // switch to quiescence search at max alpha-beta depth
+        if depth == 0 {
+            return self.quiesce(position, depth - 1, -beta, -alpha);
+        }
+
         // track search statistics
         self.stats.nodes_visited += 1;
         self.stats.max_depth = self.stats.max_depth.max(self.ab_depth - depth);
@@ -175,13 +180,7 @@ impl NegamaxAb {
         // go deeper for each move
         for mov in moves {
             position.push(mov);
-
-            let eval = if depth > 0 {
-                -self.negamax(position, depth - 1, -beta, -alpha, -sign)
-            } else {
-                self.quiesce(position, depth - 1, -beta, -alpha)
-            };
-
+            let eval = -self.negamax(position, depth - 1, -beta, -alpha, -sign);
             position.pop();
 
             if best_move.is_none() || eval > best_eval {

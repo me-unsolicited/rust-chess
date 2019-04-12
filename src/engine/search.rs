@@ -7,6 +7,9 @@ use crate::engine::board::{Board, CastleRights, Color, Placement};
 use crate::engine::mov::Move;
 use crate::engine::piece::PieceType;
 
+
+const DEPTH: i32 = 4;
+
 // min/max values that won't overflow on negation
 const MIN_EVAL: i32 = -std::i32::MAX;
 const MAX_EVAL: i32 = -MIN_EVAL;
@@ -85,7 +88,7 @@ impl Searcher for NegamaxAb {
         // initiate search
         let mut position = position.clone();
         let sign = if position.turn == Color::WHITE { 1 } else { -1 };
-        self.negamax(&mut position, Self::DEPTH, MIN_EVAL, MAX_EVAL, sign);
+        self.negamax(&mut position, DEPTH, MIN_EVAL, MAX_EVAL, sign);
 
         // get the PV from the transposition table
         let table = self.table.lock().unwrap();
@@ -103,9 +106,6 @@ impl Searcher for NegamaxAb {
 }
 
 impl NegamaxAb {
-    const DEPTH: i32 = 4;
-
-    #[allow(dead_code)]
     pub fn new(table: Arc<Mutex<HashMap<u64, Transposition>>>) -> Self {
         Self {
             stats: SearchStats::new(),
@@ -118,7 +118,7 @@ impl NegamaxAb {
 
         // track search statistics
         self.stats.nodes_visited += 1;
-        self.stats.max_depth = self.stats.max_depth.max(Self::DEPTH - depth);
+        self.stats.max_depth = self.stats.max_depth.max(DEPTH - depth);
 
         // fifty-move rule
         if position.halfmove_clock >= 50 {
@@ -199,7 +199,7 @@ impl NegamaxAb {
 
         // track search statistics
         self.stats.nodes_visited += 1;
-        self.stats.max_depth = self.stats.max_depth.max(Self::DEPTH - depth);
+        self.stats.max_depth = self.stats.max_depth.max(DEPTH - depth);
 
         // fifty-move rule
         if position.halfmove_clock >= 50 {

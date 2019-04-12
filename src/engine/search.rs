@@ -11,9 +11,6 @@ use crate::engine::piece::PieceType;
 const MIN_EVAL: i32 = -std::i32::MAX;
 const MAX_EVAL: i32 = -MIN_EVAL;
 
-// compile-time configuration of search algorithm
-fn new_searcher(table: Arc<Mutex<HashMap<u64, Transposition>>>) -> impl Searcher { NegamaxAb::new(table) }
-
 pub fn search(state: Arc<Mutex<EngineState>>, p: GoParams) {
     let root_position = state.lock().unwrap().position.clone();
 
@@ -23,7 +20,7 @@ pub fn search(state: Arc<Mutex<EngineState>>, p: GoParams) {
     }
 
     let table = state.lock().unwrap().table.clone();
-    let mut searcher = new_searcher(table);
+    let mut searcher = NegamaxAb::new(table);
     let mov = searcher.search(&position);
 
     let stats = searcher.get_stats();

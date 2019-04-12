@@ -58,6 +58,7 @@ pub struct Callbacks {
 }
 
 
+#[derive(Clone)]
 pub struct Transposition {
     eval: i32,
     eval_depth: i32,

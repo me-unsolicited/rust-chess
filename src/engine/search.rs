@@ -1,10 +1,10 @@
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use crate::engine::{EngineState, eval, gen, GoParams, Transposition};
 use crate::engine::board::{Board, Color};
 use crate::engine::mov::Move;
-use std::collections::HashMap;
 
 // min/max values that won't overflow on negation
 const MIN_EVAL: i32 = -std::i32::MAX;
@@ -150,22 +150,15 @@ impl NegamaxAb {
         }
 
         // find transposition and exit early if already evaluated at depth
-        // must at least 2-ply or won't find endgame
-        let mut known_move = None;
-        if depth < Self::DEPTH - 1 {
-            let mut table = self.table.lock().unwrap();
-            let transposition = table.get_mut(&position.hash);
-            if let Some(transposition) = transposition {
-                self.stats.tt_hits += 1;
-                if transposition.eval_depth >= depth {
-                    return (transposition.eval, transposition.best_move);
-                }
-                known_move = transposition.best_move;
+        let transposition = self.read_transposition(&position);
+        if let Some(t) = transposition.as_ref() {
+            if t.eval_depth >= depth {
+                return (t.eval, t.best_move);
             }
         }
 
         // order moves to improve alpha-beta pruning
-        order_moves(&mut moves, known_move);
+        order_moves(&mut moves, transposition.as_ref());
 
         // choose the best variation
         let mut best_eval = MIN_EVAL;
@@ -191,17 +184,28 @@ impl NegamaxAb {
             }
         }
 
-        // update transposition table
-        {
-            let mut table = self.table.lock().unwrap();
-            table.insert(position.hash, Transposition {
-                eval: best_eval,
-                eval_depth: depth,
-                best_move,
-            });
-        }
+        // update transposition table with result
+        self.write_transposition(position, Transposition {
+            eval: best_eval,
+            eval_depth: depth,
+            best_move,
+        });
 
         (best_eval, best_move)
+    }
+
+    fn read_transposition(&mut self, position: &Board) -> Option<Transposition> {
+        let transposition = self.table.lock().unwrap().get(&position.hash).cloned();
+
+        if transposition.is_some() {
+            self.stats.tt_hits += 1;
+        }
+
+        transposition
+    }
+
+    fn write_transposition(&mut self, position: &Board, t: Transposition) {
+        self.table.lock().unwrap().insert(position.hash, t);
     }
 }
 
@@ -235,7 +239,12 @@ fn is_three_fold(position: &Board) -> bool {
     false
 }
 
-fn order_moves(moves: &mut Vec<Move>, pv: Option<Move>) {
+fn order_moves(moves: &mut Vec<Move>, transposition: Option<&Transposition>) {
+
+    let mut pv = None;
+    if let Some(t) = transposition {
+        pv = t.best_move;
+    }
 
     let mut index = None;
     if let Some(mov) = pv {

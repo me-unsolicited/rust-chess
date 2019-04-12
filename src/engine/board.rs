@@ -1,10 +1,10 @@
+use std::sync::Arc;
 use std::u64;
 
-use crate::engine::{bb, hash};
+use crate::engine::{bb, gen, hash};
 use crate::engine::mov::Move;
 use crate::engine::piece::PieceType;
 use crate::engine::square::Square;
-use std::sync::Arc;
 
 const START_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -321,6 +321,19 @@ impl Board {
 
         mirror.hash = hash::of(&mirror);
         mirror
+    }
+
+    pub fn is_check(&self) -> bool {
+
+        // check restriction is calculated from white pieces perspective
+        let check_restriction = if self.turn == Color::WHITE {
+            gen::get_check_restriction(self)
+        } else {
+            let mirror = self.mirror();
+            gen::get_check_restriction(&mirror)
+        };
+
+        !0 != check_restriction
     }
 }
 

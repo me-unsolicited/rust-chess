@@ -3,8 +3,9 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use crate::engine::{EngineState, eval, gen, GoParams, Transposition};
-use crate::engine::board::{Board, Color};
+use crate::engine::board::{Board, CastleRights, Color, Placement};
 use crate::engine::mov::Move;
+use crate::engine::piece::PieceType;
 
 // min/max values that won't overflow on negation
 const MIN_EVAL: i32 = -std::i32::MAX;
@@ -99,7 +100,7 @@ impl Searcher for NegamaxAb {
 }
 
 impl NegamaxAb {
-    const DEPTH: i32 = 6;
+    const DEPTH: i32 = 4;
 
     #[allow(dead_code)]
     pub fn new(table: Arc<Mutex<HashMap<u64, Transposition>>>) -> Self {
@@ -126,27 +127,13 @@ impl NegamaxAb {
             return (0, None);
         }
 
-        // have we reached max depth?
-        if depth <= 0 {
-            return (sign * eval::evaluate(&position), None);
-        }
-
         // generate moves to test for checkmate/stalemate
         let mut moves = gen::gen_moves(&position);
 
         // no available moves? the game is over
         if moves.is_empty() {
-
-            // check restriction is calculated from white pieces perspective
-            let check_restriction = if position.turn == Color::WHITE {
-                gen::get_check_restriction(&position)
-            } else {
-                let mirror = position.mirror();
-                gen::get_check_restriction(&mirror)
-            };
-
-            let is_mate = !0 != check_restriction;
-            return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None);
+            let is_mate = position.is_check();
+            return (if is_mate { MIN_EVAL + position.fullmove_number as i32 } else { 0 }, None);
         }
 
         // find transposition
@@ -174,8 +161,12 @@ impl NegamaxAb {
         // go deeper for each move
         for mov in moves {
             position.push(mov);
-            let (eval, _) = self.negamax(position, depth - 1, -beta, -alpha, -sign);
-            let eval = -eval;
+
+            let eval = if depth > 0 {
+                -self.negamax(position, depth - 1, -beta, -alpha, -sign).0
+            } else {
+                -self.quiesce(position, depth - 1, -beta, -alpha)
+            };
 
             position.pop();
 
@@ -201,6 +192,56 @@ impl NegamaxAb {
         (best_eval, best_move)
     }
 
+    fn quiesce(&mut self, position: &mut Board, depth: i32, mut alpha: i32, beta: i32) -> i32 {
+
+        // track search statistics
+        self.stats.nodes_visited += 1;
+        self.stats.max_depth = self.stats.max_depth.max(Self::DEPTH - depth);
+
+        // fifty-move rule
+        if position.halfmove_clock >= 50 {
+            return 0;
+        }
+
+        // three-fold repetition
+        if is_three_fold(&position) {
+            return 0;
+        }
+
+        let stand_pat = eval::evaluate(position);
+        if stand_pat >= beta {
+            return beta;
+        } else if alpha < stand_pat {
+            alpha = stand_pat;
+        }
+
+        // generate moves
+        let mut moves = gen::gen_moves(position);
+
+        // no available moves? the game is over
+        if moves.is_empty() {
+            let is_mate = position.is_check();
+            return if is_mate { MIN_EVAL + position.fullmove_number as i32 } else { 0 };
+        }
+
+        // remove quiet moves
+        moves.retain(|m| is_loud(position, m));
+
+        for mov in moves {
+            position.push(mov);
+            let score = -self.quiesce(position, depth - 1, -beta, -alpha);
+            position.pop();
+
+            if score >= beta {
+                return beta;
+            } else if score > alpha {
+                alpha = score;
+            }
+        }
+
+        alpha
+    }
+
     fn read_transposition(&mut self, position: &Board) -> Option<Transposition> {
         let transposition = self.table.lock().unwrap().get(&position.hash).cloned();
 
@@ -217,7 +258,6 @@ impl NegamaxAb {
 }
 
 fn is_three_fold(position: &Board) -> bool {
-
     if position.halfmove_clock > 4 {
         let hash = position.hash;
 
@@ -247,7 +287,6 @@ fn is_three_fold(position: &Board) -> bool {
 }
 
 fn order_moves(moves: &mut Vec<Move>, board: &Board, transposition: Option<&Transposition>) {
-
     let mut pv = None;
     if let Some(t) = transposition {
         pv = t.best_move;
@@ -255,7 +294,6 @@ fn order_moves(moves: &mut Vec<Move>, board: &Board, transposition: Option<&Tran
 
     let mut orders = Vec::with_capacity(moves.len());
     while !moves.is_empty() {
-
         let mov = moves.pop().unwrap();
         let order = if pv.is_some() && mov == pv.unwrap() {
             MAX_EVAL
@@ -270,4 +308,101 @@ fn order_moves(moves: &mut Vec<Move>, board: &Board, transposition: Option<&Tran
     while !orders.is_empty() {
         moves.push(orders.pop().unwrap().0);
     }
+}
+
+fn is_loud(position: &Board, mov: &Move) -> bool {
+
+    // queen promotions
+    if let Some(&PieceType::QUEEN) = mov.promotion {
+        return true;
+    }
+
+    // captures
+    let mut capture_sq = mov.to.idx as i32;
+    if let Some(ep_target) = position.en_passant_target {
+        let moving_pawn = 0 != position.placement.pawns & (1 << mov.from.idx);
+        if moving_pawn && ep_target.idx == mov.to.idx {
+            match position.turn {
+                Color::WHITE => capture_sq -= 8,
+                Color::BLACK => capture_sq += 8,
+            }
+        }
+    }
+    if 0 != (position.placement.white | position.placement.black) & (1 << capture_sq) {
+        return true;
+    }
+
+    // checks; fake a new position after a non-capture move and test it
+    let from_bit = 1 << mov.from.idx;
+    let pawn_bit = position.placement.pawns & from_bit;
+    let knight_bit = position.placement.knights & from_bit;
+    let bishop_bit = position.placement.bishops & from_bit;
+    let rook_bit = position.placement.rooks & from_bit;
+    let queen_bit = position.placement.queens & from_bit;
+    let king_bit = position.placement.kings & from_bit;
+    let white_bit = position.placement.white & from_bit;
+    let black_bit = position.placement.black & from_bit;
+
+    let mut pawns = position.placement.pawns & !from_bit;
+    let mut knights = position.placement.knights & !from_bit;
+    let mut bishops = position.placement.bishops & !from_bit;
+    let mut rooks = position.placement.rooks & !from_bit;
+    let mut queens = position.placement.queens & !from_bit;
+    let mut kings = position.placement.kings & !from_bit;
+    let mut white = position.placement.white & !from_bit;
+    let mut black = position.placement.black & !from_bit;
+
+    let mut diff_sq = mov.to.idx as i32 - mov.from.idx as i32;
+    if diff_sq < 0 { diff_sq += 64; }
+    let diff_sq = diff_sq as u32;
+
+    match mov.promotion {
+        Some(&PieceType::KNIGHT) => knights |= 1 << mov.to.idx,
+        Some(&PieceType::BISHOP) => bishops |= 1 << mov.to.idx,
+        Some(&PieceType::ROOK) => rooks |= 1 << mov.to.idx,
+        Some(&PieceType::QUEEN) => queens |= 1 << mov.to.idx,
+        _ => {
+            pawns |= pawn_bit.rotate_left(diff_sq);
+            knights |= knight_bit.rotate_left(diff_sq);
+            bishops |= bishop_bit.rotate_left(diff_sq);
+            rooks |= rook_bit.rotate_left(diff_sq);
+            queens |= queen_bit.rotate_left(diff_sq);
+            kings |= king_bit.rotate_left(diff_sq);
+        }
+    }
+    white |= white_bit.rotate_left(diff_sq);
+    black |= black_bit.rotate_left(diff_sq);
+
+    let mut spoof = Board {
+        placement: Placement {
+            pawns,
+            knights,
+            bishops,
+            rooks,
+            queens,
+            kings,
+            white,
+            black,
+        },
+        turn: position.turn,
+        castle_rights: CastleRights {
+            kingside_w: false,
+            queenside_w: false,
+            kingside_b: false,
+            queenside_b: false,
+        },
+        en_passant_target: None,
+        halfmove_clock: 0,
+        fullmove_number: 0,
+        previous: None,
+        hash: 0,
+    };
+    if spoof.turn == Color::BLACK {
+        spoof = spoof.mirror();
+    }
+    if !0 != gen::get_check_restriction(&spoof) {
+        return true;
+    }
+
+    false
 }

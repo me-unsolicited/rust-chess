@@ -27,9 +27,11 @@ pub fn search(state: Arc<Mutex<EngineState>>, p: GoParams) {
     let mov = searcher.search(&position);
 
     let stats = searcher.get_stats();
+    eprintln!();
     eprintln!("---- {}", mov.uci());
     eprintln!("nodes_visited: {}", stats.nodes_visited);
     eprintln!("tt_hits: {}", stats.tt_hits);
+    eprintln!("tt_waste: {}", stats.tt_waste);
     eprintln!("time_elapsed (ms): {}", stats.time_elapsed.as_millis());
     eprintln!("max_depth: {}", stats.max_depth);
     eprintln!("nps: {}", stats.nps());
@@ -41,6 +43,7 @@ pub fn search(state: Arc<Mutex<EngineState>>, p: GoParams) {
 struct SearchStats {
     nodes_visited: u64,
     tt_hits: i32,
+    tt_waste: i32,
     time_elapsed: Duration,
     max_depth: i32,
 }
@@ -50,6 +53,7 @@ impl SearchStats {
         Self {
             nodes_visited: 0,
             tt_hits: 0,
+            tt_waste: 0,
             time_elapsed: Duration::from_secs(0),
             max_depth: 0,
         }
@@ -266,6 +270,7 @@ impl NegamaxAb {
         // do not overwrite a more valuable record; this can happen in parallel searches
         if let Some(entry) = table.get(&position.hash) {
             if t.eval_depth < entry.eval_depth {
+                self.stats.tt_waste += 1;
                 return;
             }
         }

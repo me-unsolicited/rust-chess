@@ -149,10 +149,17 @@ impl NegamaxAb {
             return (if is_mate { MIN_EVAL + position.fullmove_number as i32} else { 0 }, None);
         }
 
-        // find transposition and exit early if already evaluated at depth
+        // find transposition
         let transposition = self.read_transposition(&position);
         if let Some(t) = transposition.as_ref() {
-            if t.eval_depth >= depth {
+
+            // repeating the same position toward a draw?
+            if t.eval_depth > depth {
+                return (0, None);
+            }
+
+            // already evaluated at depth?
+            if t.eval_depth == depth {
                 return (t.eval, t.best_move);
             }
         }

@@ -1,10 +1,10 @@
-use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
-use std::thread::JoinHandle;
 
 use crate::engine::board::Board;
 use crate::engine::mov::Move;
-use std::collections::HashMap;
+use crate::engine::search::SearchStats;
 
 pub mod mov;
 mod bb;
@@ -22,7 +22,7 @@ pub enum LogLevel {
     DEBUG,
 }
 
-
+#[derive(Clone)]
 pub struct GoParams {
     pub search_moves: Vec<Move>,
     pub ponder: bool,
@@ -41,7 +41,7 @@ pub struct GoParams {
 
 pub struct Engine {
     state: Arc<Mutex<EngineState>>,
-    threads: Vec<JoinHandle<()>>,
+    num_cpus: usize,
 }
 
 
@@ -76,7 +76,7 @@ impl Engine {
 
         Engine {
             state: Arc::new(Mutex::new(state)),
-            threads: Vec::new(),
+            num_cpus: num_cpus::get(),
         }
     }
 
@@ -104,12 +104,57 @@ impl Engine {
     }
 
     pub fn go(&mut self, p: GoParams) {
-        let state = Arc::clone(&self.state);
-        let handle = thread::spawn(move || {
-            search::search(state, p);
-        });
 
-        self.threads.push(handle);
+        let mut threads = Vec::new();
+        let (tx_stats, rx_stats) = mpsc::channel();
+
+        // start search threads
+        for i in 0..self.num_cpus {
+            let state = Arc::clone(&self.state);
+            let params = p.clone();
+            let tx_stats_i = tx_stats.clone();
+            let handle = thread::spawn(move || {
+                search::search(state, params, i, tx_stats_i.clone());
+            });
+
+            threads.push(handle);
+        }
+
+        // one more thread to wait for search to end and determine best move
+        let state = Arc::clone(&self.state);
+        thread::spawn(move || {
+
+            // wait for all searches to end
+            while !threads.is_empty() {
+                if let Err(_) = threads.pop().unwrap().join() {
+                    panic!("failed to join thread")
+                }
+            }
+
+            // get the PV from the transposition table
+            let state = state.lock().unwrap();
+            let table = state.table.lock().unwrap();
+            let transposition = table.get(&state.position.hash).expect("no root transposition");
+            let mov = transposition.best_move.expect("no move");
+
+            // gather search statistics
+            let mut stats = SearchStats::new();
+            for thread_stats in rx_stats.iter() {
+                stats.combine(&thread_stats);
+            }
+
+            // report statistics to std error
+            eprintln!();
+            eprintln!("---- {}", mov.uci());
+            eprintln!("nodes_visited: {}", stats.nodes_visited);
+            eprintln!("tt_hits: {}", stats.tt_hits);
+            eprintln!("tt_waste: {}", stats.tt_waste);
+            eprintln!("time_elapsed (ms): {}", stats.time_elapsed.as_millis());
+            eprintln!("max_depth: {}", stats.max_depth);
+            eprintln!("nps: {}", stats.nps());
+
+            (state.callbacks.best_move_fn)(&mov);
+        });
     }
 
     pub fn stop(&self) {

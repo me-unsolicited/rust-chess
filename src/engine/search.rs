@@ -6,6 +6,7 @@ use crate::engine::{EngineState, eval, gen, GoParams, Transposition};
 use crate::engine::board::{Board, CastleRights, Color, Placement};
 use crate::engine::mov::Move;
 use crate::engine::piece::PieceType;
+use std::sync::mpsc::Sender;
 
 
 const DEPTH: i32 = 4;
@@ -14,7 +15,7 @@ const DEPTH: i32 = 4;
 const MIN_EVAL: i32 = -std::i32::MAX;
 const MAX_EVAL: i32 = -MIN_EVAL;
 
-pub fn search(state: Arc<Mutex<EngineState>>, p: GoParams) {
+pub fn search(state: Arc<Mutex<EngineState>>, p: GoParams, thread_index: usize, tx_stats: Sender<SearchStats>) {
     let root_position = state.lock().unwrap().position.clone();
 
     let mut position = root_position;
@@ -23,29 +24,21 @@ pub fn search(state: Arc<Mutex<EngineState>>, p: GoParams) {
     }
 
     let table = state.lock().unwrap().table.clone();
-    let mut searcher = NegamaxAb::new(table);
-    let mov = searcher.search(&position);
+    let mut searcher = NegamaxAb::new(table, thread_index);
+    searcher.search(&position);
 
-    let stats = searcher.get_stats();
-    eprintln!();
-    eprintln!("---- {}", mov.uci());
-    eprintln!("nodes_visited: {}", stats.nodes_visited);
-    eprintln!("tt_hits: {}", stats.tt_hits);
-    eprintln!("tt_waste: {}", stats.tt_waste);
-    eprintln!("time_elapsed (ms): {}", stats.time_elapsed.as_millis());
-    eprintln!("max_depth: {}", stats.max_depth);
-    eprintln!("nps: {}", stats.nps());
-
-    (state.lock().unwrap().callbacks.best_move_fn)(&mov);
+    if let Err(_) = tx_stats.send(searcher.get_stats()) {
+        panic!("failed to send search statistics");
+    }
 }
 
 #[derive(Copy, Clone)]
-struct SearchStats {
-    nodes_visited: u64,
-    tt_hits: i32,
-    tt_waste: i32,
-    time_elapsed: Duration,
-    max_depth: i32,
+pub struct SearchStats {
+    pub nodes_visited: u64,
+    pub tt_hits: i32,
+    pub tt_waste: i32,
+    pub time_elapsed: Duration,
+    pub max_depth: i32,
 }
 
 impl SearchStats {
@@ -67,10 +60,18 @@ impl SearchStats {
 
         1000 * self.nodes_visited / millis
     }
+
+    pub fn combine(&mut self, other: &Self) {
+        self.nodes_visited += other.nodes_visited;
+        self.tt_hits += other.tt_hits;
+        self.tt_waste += other.tt_waste;
+        self.time_elapsed = self.time_elapsed.max(other.time_elapsed);
+        self.max_depth = self.max_depth.max(other.max_depth);
+    }
 }
 
 trait Searcher {
-    fn search(&mut self, position: &Board) -> Move;
+    fn search(&mut self, position: &Board);
     fn get_stats(&self) -> SearchStats;
 }
 
@@ -79,10 +80,11 @@ struct NegamaxAb {
     table: Arc<Mutex<HashMap<u64, Transposition>>>,
     rng: rand::rngs::ThreadRng,
     ab_depth: i32,
+    thread_index: usize,
 }
 
 impl Searcher for NegamaxAb {
-    fn search(&mut self, position: &Board) -> Move {
+    fn search(&mut self, position: &Board) {
 
         // re-initialize thread local random, maybe for the first time
         self.rng = rand::thread_rng();
@@ -98,14 +100,7 @@ impl Searcher for NegamaxAb {
             self.negamax(&mut position, i, MIN_EVAL, MAX_EVAL, sign);
         }
 
-        // get the PV from the transposition table
-        let table = self.table.lock().unwrap();
-        let transposition = table.get(&position.hash).expect("no root transposition");
-        let mov = transposition.best_move.expect("no move");
-
         self.stats.time_elapsed = start.elapsed();
-
-        mov
     }
 
     fn get_stats(&self) -> SearchStats {
@@ -114,12 +109,13 @@ impl Searcher for NegamaxAb {
 }
 
 impl NegamaxAb {
-    pub fn new(table: Arc<Mutex<HashMap<u64, Transposition>>>) -> Self {
+    pub fn new(table: Arc<Mutex<HashMap<u64, Transposition>>>, thread_index: usize) -> Self {
         Self {
             stats: SearchStats::new(),
             table,
             rng: rand::thread_rng(),
             ab_depth: DEPTH,
+            thread_index,
         }
     }
 
@@ -165,6 +161,11 @@ impl NegamaxAb {
 
         // order moves to improve alpha-beta pruning
         order_moves(&mut moves, position, transposition.as_ref());
+
+        // Lazy-SMP: at the root node, reorder the moves according to the current thread
+        if depth == self.ab_depth {
+            moves.swap(0, self.thread_index as usize);
+        }
 
         // choose the best variation
         let mut best_eval = MIN_EVAL;
@@ -269,7 +270,7 @@ impl NegamaxAb {
 
         // do not overwrite a more valuable record; this can happen in parallel searches
         if let Some(entry) = table.get(&position.hash) {
-            if t.eval_depth < entry.eval_depth {
+            if t.eval_depth <= entry.eval_depth {
                 self.stats.tt_waste += 1;
                 return;
             }

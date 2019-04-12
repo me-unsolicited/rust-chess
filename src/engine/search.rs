@@ -74,6 +74,7 @@ struct NegamaxAb {
     stats: SearchStats,
     table: Arc<Mutex<HashMap<u64, Transposition>>>,
     rng: rand::rngs::ThreadRng,
+    ab_depth: i32,
 }
 
 impl Searcher for NegamaxAb {
@@ -85,10 +86,13 @@ impl Searcher for NegamaxAb {
         // begin timing the search routine
         let start = Instant::now();
 
-        // initiate search
-        let mut position = position.clone();
-        let sign = if position.turn == Color::WHITE { 1 } else { -1 };
-        self.negamax(&mut position, DEPTH, MIN_EVAL, MAX_EVAL, sign);
+        // iterative deepening
+        for i in 0..DEPTH {
+            let mut position = position.clone();
+            let sign = if position.turn == Color::WHITE { 1 } else { -1 };
+            self.ab_depth = i;
+            self.negamax(&mut position, i, MIN_EVAL, MAX_EVAL, sign);
+        }
 
         // get the PV from the transposition table
         let table = self.table.lock().unwrap();
@@ -111,6 +115,7 @@ impl NegamaxAb {
             stats: SearchStats::new(),
             table,
             rng: rand::thread_rng(),
+            ab_depth: DEPTH,
         }
     }
 
@@ -118,7 +123,7 @@ impl NegamaxAb {
 
         // track search statistics
         self.stats.nodes_visited += 1;
-        self.stats.max_depth = self.stats.max_depth.max(DEPTH - depth);
+        self.stats.max_depth = self.stats.max_depth.max(self.ab_depth - depth);
 
         // fifty-move rule
         if position.halfmove_clock >= 50 {
@@ -199,7 +204,7 @@ impl NegamaxAb {
 
         // track search statistics
         self.stats.nodes_visited += 1;
-        self.stats.max_depth = self.stats.max_depth.max(DEPTH - depth);
+        self.stats.max_depth = self.stats.max_depth.max(self.ab_depth - depth);
 
         // fifty-move rule
         if position.halfmove_clock >= 50 {

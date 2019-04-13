@@ -10,6 +10,7 @@ use std::sync::mpsc::Sender;
 
 
 const DEPTH: i32 = 4;
+const Q_CHECK_DEPTH: i32 = 20;
 
 // min/max values that won't overflow on negation
 const MIN_EVAL: i32 = -std::i32::MAX;
@@ -233,7 +234,7 @@ impl NegamaxAb {
             return 0;
         }
 
-        // evaluate standing pat if not in check
+        // evaluate standing pat if not in check;
         let is_check = position.is_check();
         if !is_check {
             let stand_pat = eval::evaluate(position);
@@ -253,9 +254,12 @@ impl NegamaxAb {
             return if is_mate { MIN_EVAL + position.fullmove_number as i32 } else { 0 };
         }
 
+        // include checks/checking moves at this depth?
+        let include_checks = depth.abs() < Q_CHECK_DEPTH;
+
         // remove quiet moves if not in check
-        if !is_check {
-            moves.retain(|m| is_loud(position, m));
+        if !(is_check && include_checks) {
+            moves.retain(|m| is_loud(position, m, include_checks));
         }
 
         for mov in moves {
@@ -386,7 +390,7 @@ fn order_moves(moves: &mut Vec<Move>, board: &Board, transposition: Option<&Tran
     }
 }
 
-fn is_loud(position: &Board, mov: &Move) -> bool {
+fn is_loud(position: &Board, mov: &Move, include_checks: bool) -> bool {
 
     // queen promotions
     if let Some(&PieceType::QUEEN) = mov.promotion {
@@ -409,6 +413,10 @@ fn is_loud(position: &Board, mov: &Move) -> bool {
     }
 
     // checks; fake a new position after a non-capture move and test it
+    if !include_checks {
+        return false;
+    }
+
     let from_bit = 1 << mov.from.idx;
     let pawn_bit = position.placement.pawns & from_bit;
     let knight_bit = position.placement.knights & from_bit;

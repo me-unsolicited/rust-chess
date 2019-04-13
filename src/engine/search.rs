@@ -396,6 +396,18 @@ fn is_loud(position: &Board, mov: &Move) -> bool {
     white |= white_bit.rotate_left(diff_sq);
     black |= black_bit.rotate_left(diff_sq);
 
+    if let Some(castling_rook) = mov.get_castling_rook() {
+        let rook_bit = 1 << castling_rook.from.idx;
+        let white_bit = position.placement.white & rook_bit;
+        let black_bit = position.placement.black & rook_bit;
+        let mut diff_sq = castling_rook.to.idx as i32 - castling_rook.from.idx as i32;
+        if diff_sq < 0 { diff_sq += 64; };
+        let diff_sq = diff_sq as u32;
+        rooks &= !rook_bit;
+        white |= white_bit.rotate_left(diff_sq);
+        black |= black_bit.rotate_right(diff_sq);
+    }
+
     let mut spoof = Board {
         placement: Placement {
             pawns,

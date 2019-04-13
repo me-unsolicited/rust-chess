@@ -234,7 +234,8 @@ impl NegamaxAb {
         }
 
         // evaluate standing pat if not in check
-        if !position.is_check() {
+        let is_check = position.is_check();
+        if !is_check {
             let stand_pat = eval::evaluate(position);
             if stand_pat >= beta {
                 return beta;
@@ -248,12 +249,14 @@ impl NegamaxAb {
 
         // no available moves? the game is over
         if moves.is_empty() {
-            let is_mate = position.is_check();
+            let is_mate = is_check;
             return if is_mate { MIN_EVAL + position.fullmove_number as i32 } else { 0 };
         }
 
-        // remove quiet moves
-        moves.retain(|m| is_loud(position, m));
+        // remove quiet moves if not in check
+        if !is_check {
+            moves.retain(|m| is_loud(position, m));
+        }
 
         for mov in moves {
             position.push(mov);

@@ -10,8 +10,8 @@ use std::sync::mpsc::Sender;
 
 
 const DEPTH: i32 = 4;
-const Q_DEPTH: i32 = 30;
-const Q_CHECK_DEPTH: i32 = 20;
+const Q_DEPTH: i32 = 10;
+const Q_CHECK_DEPTH: i32 = 6;
 
 // min/max values that won't overflow on negation
 const MIN_EVAL: i32 = -std::i32::MAX;
@@ -171,11 +171,9 @@ impl NegamaxAb {
         // order moves to improve alpha-beta pruning
         order_moves(&mut moves, position, transposition.as_ref());
 
-        // Lazy-SMP: at the root node, reorder the moves according to the current thread
-        if depth == self.ab_depth {
-            let swap_index = (moves.len() - 1).min(self.thread_index);
-            moves.swap(0, swap_index);
-        }
+        // Lazy-SMP: reorder the moves according to the current thread
+        let swap_index = (moves.len() - 1).min(self.thread_index);
+        moves.swap(0, swap_index);
 
         // choose the best variation
         let mut best_eval = MIN_EVAL;

@@ -93,7 +93,7 @@ impl Searcher for NegamaxAb {
         let start = Instant::now();
 
         // iterative deepening
-        for i in 0..DEPTH {
+        for i in 1..=DEPTH {
             let mut position = position.clone();
             let sign = if position.turn == Color::WHITE { 1 } else { -1 };
             self.ab_depth = i;
@@ -123,7 +123,7 @@ impl NegamaxAb {
 
         // switch to quiescence search at max alpha-beta depth
         if depth == 0 {
-            return self.quiesce(position, depth - 1, -beta, -alpha);
+            return sign * self.quiesce(position, depth - 1, alpha, beta);
         }
 
         // track search statistics

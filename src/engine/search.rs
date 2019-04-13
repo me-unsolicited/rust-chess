@@ -133,15 +133,17 @@ impl NegamaxAb {
         // find transposition
         let transposition = self.read_transposition(&position);
         if let Some(t) = transposition.as_ref() {
+            if let Some(eval_depth) = t.eval_depth {
 
-            // repeating the same position toward a draw?
-            if t.eval_depth > depth {
-                return 0;
-            }
+                // repeating the same position toward a draw?
+                if eval_depth > depth {
+                    return 0;
+                }
 
-            // already evaluated at depth?
-            if t.eval_depth == depth {
-                return t.eval;
+                // already evaluated at depth?
+                if eval_depth == depth {
+                    return t.eval.unwrap();
+                }
             }
         }
 
@@ -197,8 +199,12 @@ impl NegamaxAb {
 
         // update transposition table with result
         self.write_transposition(position, Transposition {
-            eval: best_eval,
-            eval_depth: depth,
+            eval: Some(best_eval),
+            eval_depth: Some(depth),
+            q_eval: match transposition {
+                Some(t) => t.q_eval,
+                None => None,
+            },
             best_move,
         });
 
@@ -210,6 +216,12 @@ impl NegamaxAb {
         // track search statistics
         self.stats.nodes_visited += 1;
         self.stats.max_depth = self.stats.max_depth.max(self.ab_depth - depth);
+
+        // find transposition
+        let transposition = self.read_transposition_q_eval(&position);
+        if let Some(q_eval) = transposition {
+            return q_eval;
+        }
 
         // fifty-move rule
         if position.halfmove_clock >= 50 {
@@ -252,6 +264,9 @@ impl NegamaxAb {
             }
         }
 
+        // update transposition table with result
+        self.write_transposition_q_eval(position, alpha);
+
         alpha
     }
 
@@ -277,6 +292,38 @@ impl NegamaxAb {
         }
 
         table.insert(position.hash, t);
+    }
+
+    fn read_transposition_q_eval(&mut self, position: &Board) -> Option<i32> {
+        let transposition = self.table.lock().unwrap().get(&position.hash).cloned();
+
+        if let Some(t) = transposition {
+            if t.q_eval.is_some() {
+                self.stats.tt_hits += 1;
+            }
+            t.q_eval
+        } else {
+            None
+        }
+    }
+
+    fn write_transposition_q_eval(&mut self, position: &Board, q_eval: i32) {
+        let mut table = self.table.lock().unwrap();
+
+        if let Some(entry) = table.get_mut(&position.hash) {
+            if entry.q_eval.is_some() {
+                self.stats.tt_waste += 1;
+            } else {
+                entry.q_eval = Some(q_eval);
+            }
+        } else {
+            table.insert(position.hash, Transposition {
+                eval: None,
+                eval_depth: None,
+                q_eval: Some(q_eval),
+                best_move: None
+            });
+        }
     }
 }
 

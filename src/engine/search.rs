@@ -10,6 +10,7 @@ use std::sync::mpsc::Sender;
 
 
 const DEPTH: i32 = 4;
+const Q_DEPTH: i32 = 30;
 const Q_CHECK_DEPTH: i32 = 20;
 
 // min/max values that won't overflow on negation
@@ -202,8 +203,12 @@ impl NegamaxAb {
         self.write_transposition(position, Transposition {
             eval: Some(best_eval),
             eval_depth: Some(depth),
-            q_eval: match transposition {
+            q_eval: match &transposition {
                 Some(t) => t.q_eval,
+                None => None,
+            },
+            q_depth: match &transposition {
+                Some(t) => t.q_depth,
                 None => None,
             },
             best_move,
@@ -219,9 +224,11 @@ impl NegamaxAb {
         self.stats.max_depth = self.stats.max_depth.max(self.ab_depth - depth);
 
         // find transposition
-        let transposition = self.read_transposition_q_eval(&position);
-        if let Some(q_eval) = transposition {
-            return q_eval;
+        let (t_eval, t_depth) = self.read_transposition_q_eval(&position);
+        if let Some(q_eval) = t_eval {
+            if t_depth.unwrap() >= Q_DEPTH - depth.abs() {
+                return q_eval;
+            }
         }
 
         // fifty-move rule
@@ -232,6 +239,11 @@ impl NegamaxAb {
         // three-fold repetition
         if is_three_fold(&position) {
             return 0;
+        }
+
+        // return static evaluation when maximum depth is reached
+        if depth.abs() >= Q_DEPTH {
+            return eval::evaluate(position);
         }
 
         // evaluate standing pat if not in check;
@@ -275,7 +287,7 @@ impl NegamaxAb {
         }
 
         // update transposition table with result
-        self.write_transposition_q_eval(position, alpha);
+        self.write_transposition_q_eval(position, alpha, Q_DEPTH - depth.abs());
 
         alpha
     }
@@ -304,20 +316,20 @@ impl NegamaxAb {
         table.insert(position.hash, t);
     }
 
-    fn read_transposition_q_eval(&mut self, position: &Board) -> Option<i32> {
+    fn read_transposition_q_eval(&mut self, position: &Board) -> (Option<i32>, Option<i32>) {
         let transposition = self.table.lock().unwrap().get(&position.hash).cloned();
 
         if let Some(t) = transposition {
             if t.q_eval.is_some() {
                 self.stats.tt_hits += 1;
             }
-            t.q_eval
+            (t.q_eval, t.q_depth)
         } else {
-            None
+            (None, None)
         }
     }
 
-    fn write_transposition_q_eval(&mut self, position: &Board, q_eval: i32) {
+    fn write_transposition_q_eval(&mut self, position: &Board, q_eval: i32, q_depth: i32) {
         let mut table = self.table.lock().unwrap();
 
         if let Some(entry) = table.get_mut(&position.hash) {
@@ -325,12 +337,14 @@ impl NegamaxAb {
                 self.stats.tt_waste += 1;
             } else {
                 entry.q_eval = Some(q_eval);
+                entry.q_depth = Some(q_depth);
             }
         } else {
             table.insert(position.hash, Transposition {
                 eval: None,
                 eval_depth: None,
                 q_eval: Some(q_eval),
+                q_depth: Some(q_depth),
                 best_move: None
             });
         }

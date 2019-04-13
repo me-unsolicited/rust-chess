@@ -63,6 +63,7 @@ pub struct Transposition {
     eval: Option<i32>,
     eval_depth: Option<i32>,
     q_eval: Option<i32>,
+    q_depth: Option<i32>,
     best_move: Option<Move>,
 }
 

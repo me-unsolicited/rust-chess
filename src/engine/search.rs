@@ -130,6 +130,21 @@ impl NegamaxAb {
         self.stats.nodes_visited += 1;
         self.stats.max_depth = self.stats.max_depth.max(self.ab_depth - depth);
 
+        // find transposition
+        let transposition = self.read_transposition(&position);
+        if let Some(t) = transposition.as_ref() {
+
+            // repeating the same position toward a draw?
+            if t.eval_depth > depth {
+                return 0;
+            }
+
+            // already evaluated at depth?
+            if t.eval_depth == depth {
+                return t.eval;
+            }
+        }
+
         // fifty-move rule
         if position.halfmove_clock >= 50 {
             return 0;
@@ -147,21 +162,6 @@ impl NegamaxAb {
         if moves.is_empty() {
             let is_mate = position.is_check();
             return if is_mate { MIN_EVAL + position.fullmove_number as i32 } else { 0 };
-        }
-
-        // find transposition
-        let transposition = self.read_transposition(&position);
-        if let Some(t) = transposition.as_ref() {
-
-            // repeating the same position toward a draw?
-            if t.eval_depth > depth {
-                return 0;
-            }
-
-            // already evaluated at depth?
-            if t.eval_depth == depth {
-                return t.eval;
-            }
         }
 
         // order moves to improve alpha-beta pruning

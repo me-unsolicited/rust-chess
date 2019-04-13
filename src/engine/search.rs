@@ -233,11 +233,14 @@ impl NegamaxAb {
             return 0;
         }
 
-        let stand_pat = eval::evaluate(position);
-        if stand_pat >= beta {
-            return beta;
-        } else if alpha < stand_pat {
-            alpha = stand_pat;
+        // evaluate standing pat if not in check
+        if !position.is_check() {
+            let stand_pat = eval::evaluate(position);
+            if stand_pat >= beta {
+                return beta;
+            } else if alpha < stand_pat {
+                alpha = stand_pat;
+            }
         }
 
         // generate moves
